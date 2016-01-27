@@ -46,39 +46,76 @@ namespace ml {
 
 	MessageGenerator::~MessageGenerator() {};
 
-	void MessageGenerator::Generate(io::Printer* printer) {
-		// Generate signature.
-		// string signature = descriptor_->name();
-		// UpperString(&signature);
-		// printer->Print("signature $signature$ =\n",
-		// 	"signature", signature);
-		// printer->Indent();
-		// printer->Print("sig\n");
-		// printer->Indent();
-		// printer->Print("type t\n");
-		// // Add setter functions here.
-		// printer->Outdent();
-		// printer->Print("end\n");
-		// printer->Outdent();
+	void MessageGenerator::GenerateSignature(io::Printer* printer, 
+		bool toplevel) {
+		if (toplevel) {
+			string signature = descriptor_->name();
+			UpperString(&signature);
+			printer->Print("signature $signature$ =\nsig\n",
+			"signature", signature);
+		} else {
+			string signature = descriptor_->name();
+			printer->Print("structure $signature$ : sig\n",
+			"signature", signature);
+		}
+		printer->Indent();
+		// Print child signatures.
+		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
+			MessageGenerator generator(descriptor_->nested_type(i));
+			generator.GenerateSignature(printer, false /* toplevel */);
+		}
+		// Note: no signature needed for enums.
 
+		// TODO: print contents of this signature.
+
+		printer->Print("type t\n");
+
+		// Print type names for nested messages.
+		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
+			string name = descriptor_->nested_type(i)->name();
+			UncapitalizeString(name);
+			printer->Print("type $name$\n", "name", name);
+		}
+
+		// Print type names for nested enums.
+		for (int i = 0; i < descriptor_->enum_type_count(); i++) {
+			string name = descriptor_->enum_type(i)->name();
+			UncapitalizeString(name);
+			printer->Print("type $name$\n", "name", name);
+		}
+
+		// End is the same regardless of toplevel being true/false.
+		printer->Outdent();
+		printer->Print("end\n");
+	}
+
+	void MessageGenerator::GenerateStructure(io::Printer* printer,
+		bool toplevel) {
 		// Generate structure.
 		string structure = descriptor_->name();
 		structure[0] = toupper(structure[0]);
 		//printer->Print("structure $structure$ :> $signature$ = ",
-		printer->Print("structure $structure$ = ",
-			"structure", structure);
-			//"signature", signature);
-		printer->Indent();
+		if (toplevel) {
+			string signature = descriptor_->name();
+			UpperString(&signature);
+			printer->Print("structure $structure$ :> $signature$ = \n",
+				"structure", structure,
+				"signature", signature);
+		} else {
+			printer->Print("structure $structure$ = \n",
+				"structure", structure);
+		}
 		printer->Print("struct\n");
 		printer->Indent();
-		// TODO: Print here other type declarations
-		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
-			MessageGenerator generator(descriptor_->nested_type(i));
-			generator.Generate(printer);
-		}
+
+		// Print structures for nested types.
 		for (int i = 0; i < descriptor_->enum_type_count(); i++) {
 			EnumGenerator generator(descriptor_->enum_type(i));
-			generator.Generate(printer);
+			generator.GenerateStructure(printer);
+		}
+		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
+			MessageGenerator generator(descriptor_->nested_type(i));
+			generator.GenerateStructure(printer, false /* toplevel */);
 		}
 		// Print main type declaration.
 		printer->Print("type t = {\n");
@@ -86,22 +123,40 @@ namespace ml {
 		for (int i = 0; i < descriptor_->field_count(); i++) {
 			const FieldDescriptor* field = descriptor_->field(i);
 			string name = field->name();
+			SanitizeForMl(name);
 
 			string type = GetFormattedTypeFromField(field);
+			UncapitalizeString(type);
 
 			// TODO: decide if default should be required.
 			string label = LabelName(field->label());
-			printer->Print("$name$: $type$ $label$,\n",
+			printer->Print("$name$: $type$ $label$",
 				"name", name,
 				"type", type,
 				"label", label);
+			if (i < descriptor_->field_count() - 1) {
+				printer->Print(",\n");
+			} else {
+				printer->Print("\n");
+			}
 		}
 		printer->Outdent();
 		// TODO: Print alias for main type declaration.
 		printer->Print("}\n");
 		printer->Outdent();
 		printer->Print("end\n");
-		printer->Outdent();
+
+		string type_name = descriptor_->name();
+		string structure_name = descriptor_->name();
+		UncapitalizeString(type_name);
+		CapitalizeString(structure_name);
+		printer->Print("type $type_name$ = $structure_name$.t\n",
+			"type_name", type_name,
+			"structure_name", structure_name);
+	}
+
+	void MessageGenerator::GenerateFunctions(io::Printer* printer) {
+
 	}
 
 }  // namespace ml

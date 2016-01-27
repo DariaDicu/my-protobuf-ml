@@ -47,7 +47,11 @@ switch (type) {
   return MLTYPE_INT;
 }
 
-const char* PrimitiveTypeName(const FieldDescriptor::Type type) {
+void SanitizeForMl(string& name) {
+  if (name == "type") name += "_";
+}
+
+string PrimitiveTypeName(const FieldDescriptor::Type type) {
   MlType ml_type = GetMlType(type);
   switch (ml_type) {
     // TODO: replace this with implementation for big ints.
@@ -67,7 +71,7 @@ const char* PrimitiveTypeName(const FieldDescriptor::Type type) {
   return NULL;
 }
 
-const char* LabelName(const FieldDescriptor::Label label) {
+string LabelName(const FieldDescriptor::Label label) {
   switch (label) {
     case FieldDescriptor::LABEL_OPTIONAL : return "option";
     case FieldDescriptor::LABEL_REQUIRED : return "";
@@ -85,26 +89,28 @@ bool PrimitiveType(const FieldDescriptor::Type type) {
     type != FieldDescriptor::TYPE_ENUM;
 }
 
-const char* GetCapitalizedTypeFromString(const char* type) {
-  // TODO: Format here as necessary.
-  return type;
+void CapitalizeString(string& type) {
+  if (type[0] >= 'a' && type[0] <= 'z') type[0] -= 'a' - 'A';
 }
 
-const char* GetUncapitalizedTypeFromString(const char* type) {
-  // TODO: Format here as necessary.
-  return type;
+void UncapitalizeString(string& type) {
+  if (type[0] >= 'A' && type[0] <= 'Z') type[0] += 'a' - 'A';
 }
 
 // TODO: const reference instead?
-const char* GetFormattedTypeFromField(const FieldDescriptor* field) {
+string GetFormattedTypeFromField(const FieldDescriptor* field) {
   if (PrimitiveType(field->type())) {
     return PrimitiveTypeName(field->type());
   }
   if (field->type() == FieldDescriptor::TYPE_MESSAGE) {
-    return GetCapitalizedTypeFromString(field->message_type()->name().c_str());
+    string name = field->message_type()->name();
+    CapitalizeString(name);
+    return name;
   }
   if (field->type() == FieldDescriptor::TYPE_ENUM) {
-    return GetCapitalizedTypeFromString(field->enum_type()->name().c_str());
+    string name = field->enum_type()->name();
+    CapitalizeString(name);
+    return name.c_str();
   }
   GOOGLE_LOG(FATAL) << "Can't get here.";
   return NULL;

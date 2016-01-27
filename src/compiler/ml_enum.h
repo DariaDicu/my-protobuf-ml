@@ -21,8 +21,9 @@ class EnumGenerator {
  public:
   explicit EnumGenerator(const EnumDescriptor* descriptor);
   ~EnumGenerator();
-
-  void Generate(io::Printer* printer);
+  
+  void GenerateStructure(io::Printer* printer);
+  void GenerateFunctions(io::Printer* printer);
 
  private:
   const EnumDescriptor* descriptor_;

@@ -1,25 +1,53 @@
-datatype PhoneType = MOBILE
+datatype phoneType = MOBILE
   | HOME
-  | WORK;
-structure Person = struct
-    structure PhoneNumber = struct
-        type t = {
-          number: string option,
-          type: PhoneType option,
-        }
-      end
-    datatype PhoneType = MOBILE
-      | HOME
-      | WORK;
+  | WORK
+  | UNKNOWN
+
+
+signature PERSON =
+sig
+  structure PhoneNumber : sig
+    type t
+  end
+  type t
+  type phoneNumber
+  type phoneType
+end
+
+structure Person :> PERSON = 
+struct
+  datatype phoneType = MOBILE
+    | HOME
+    | WORK
+  structure PhoneNumber = 
+  struct
     type t = {
-      name: string option,
-      id: int option,
-      email: string option,
-      phones: PhoneNumber list,
+      number: string option,
+      type_: phoneType option
     }
   end
-structure AddressBook = struct
-    type t = {
-      people: Person list,
-    }
-  end
+  type phoneNumber = PhoneNumber.t
+  type t = {
+    name: string option,
+    id: int option,
+    email: string option,
+    phones: phoneNumber list
+  }
+end
+type person = Person.t
+
+
+signature ADDRESSBOOK =
+sig
+  type t
+end
+
+structure AddressBook :> ADDRESSBOOK = 
+struct
+  type t = {
+    people: person list
+  }
+end
+type addressBook = AddressBook.t
+
+

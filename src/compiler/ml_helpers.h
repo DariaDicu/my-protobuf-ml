@@ -22,19 +22,19 @@ enum MlType {
 
 MlType GetMlType(const FieldDescriptor::Type type);
 
-const char* LabelName(const FieldDescriptor::Label label);
+void SanitizeForMl(string& name);
 
-const char* PrimitiveTypeName(const FieldDescriptor::Type type);
+string LabelName(const FieldDescriptor::Label label);
+
+string PrimitiveTypeName(const FieldDescriptor::Type type);
 
 bool PrimitiveType(const FieldDescriptor::Type type);
 
-const char* GetCapitalizedTypeFromString(const char* input_string);
+void CapitalizeString(string& input_string);
 
-const char* GetUncapitalizedTypeFromString(const char* input_string);
+void UncapitalizeString(string& input_string);
 
-const char* GetFormattedTypeFromField(const FieldDescriptor* field);
-
-const char* NonPrimitiveType(const FieldDescriptor type);
+string GetFormattedTypeFromField(const FieldDescriptor* field);
 
 }  // namespace ml
 }  // namespace compiler

@@ -54,19 +54,20 @@ FileGenerator::~FileGenerator() {}
 void FileGenerator::Generate(io::Printer* printer) {
 	for (int i = 0; i < file_->enum_type_count(); i++) {
 		EnumGenerator generator(file_->enum_type(i));
-		generator.Generate(printer);
+		generator.GenerateStructure(printer);
+		printer->Print("\n");
+		generator.GenerateFunctions(printer);
+		printer->Print("\n");
 	}
 	for (int i = 0; i < file_->message_type_count(); i++) {
 		MessageGenerator generator(file_->message_type(i));
-		generator.Generate(printer);
+		generator.GenerateSignature(printer, true /* toplevel */);
+		printer->Print("\n");
+		generator.GenerateStructure(printer, true /* toplevel */);
+		printer->Print("\n");
+		generator.GenerateFunctions(printer);
+		printer->Print("\n");
 	}
-	/*
-	printer->Print("structure Person = struct"
-	"	type t = {"
-	"	name: string"
- 	"	};"
-	"	end;;");
-	*/
 }
 
 }  // namespace ml

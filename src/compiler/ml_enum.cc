@@ -62,25 +62,28 @@ namespace ml {
 
 	EnumGenerator::~EnumGenerator() {};
 
-	void EnumGenerator::Generate(io::Printer* printer) {
+	void EnumGenerator::GenerateStructure(io::Printer* printer) {
 		// Type name will be camelCased with first letter lowercase.
-		string type = GetCapitalizedTypeFromString(descriptor_->name().c_str());
+		string type = descriptor_->name();
+		UncapitalizeString(type);
 
 		printer->Print("datatype $type$ = ", "type", type);
 		printer->Indent();
 		for (int i = 0; i < canonical_values_.size(); i++) {
 			// Capitalize each constructor.
-			string constructor = GetCapitalizedTypeFromString(
-				canonical_values_[i]->name().c_str());
+			string constructor = canonical_values_[i]->name();
+			CapitalizeString(constructor);
 
 			if (i > 0) printer->Print("\n| ");
 			printer->Print("$constructor$", 
 				"constructor", constructor);
 		}
-		printer->Print(";\n");
+		printer->Print("\n");
 		printer->Outdent();
 	}
 
+	void EnumGenerator::GenerateFunctions(io::Printer* printer) {
+	}
 }  // namespace ml
 }  // namespace compiler
 }  // namespace protobuf

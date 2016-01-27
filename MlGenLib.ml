@@ -106,11 +106,19 @@ fun parse32 buff = parseFixed 0 4 buff 0
 
 fun parse64 buff = parseFixed 0 8 buff 0
 
+(* Returns message body and remaining buffer. *)
+fun parse_message_body buff = 
+let
+	val (length, buff) = parseVarint buff
+	val (message, buff) = ByteBuffer.nextFixedBlock buff length
+in
+	(message, buff)
+end
+
 fun parse_message buff expected_tag = 
 let
 	val ((tag, code), buff) = parseKey buff
 	val (length, buff) = parseVarint buff
-	val (message, buff) = ByteBuffer.nextFixedBlock buff length
 in
 	if (code <> 2) then
 		raise Exception(PARSE, "Attempting to parse wrong wire type.")
@@ -118,7 +126,7 @@ in
 		raise Exception(PARSE, "Parsed tag does not match expected tag.")
 	else
 		(* Returns resulting message, as well as remaining buffer. *)
-		(message, buff)
+		parse_message_body buff
 end
 
 (*
@@ -136,6 +144,30 @@ in
 end
 *)
 
+(*------------------------------------*)
+(* Encoding *)
+
+(* Creates a Word8 list. The wrapper function uses this to 
+create a Word8Vector. *)
+fun encodeVarint_core byte_list remaining_int = 
+let
+	(* Binary-and to get least significant 7 bits *)
+	val last7bits = IntInf.andb(remaining_int, 127)
+	val remaining_int = IntInf.~>>(remaining_int, Word.fromInt 7)
+	val msb = if (remaining_int > 0) then 1 else 0
+	(* The new byte we add to the list *)
+	val first_byte = if (msb = 1) then Word8.fromInt (IntInf.orb(last7bits, 128)) else Word8.fromInt last7bits
+in
+	if (msb = 1) then
+		(* Making first bit of byte 1 and appending to list *)
+		encodeVarint_core (first_byte::byte_list) remaining_int
+	else
+		(* Resulting list is in reverse order, so must reverse it. *)
+		rev (first_byte::byte_list)
+end
+
+fun encodeVarint value = Word8Vector.fromList
+	(encodeVarint_core [] value)
 
 
 

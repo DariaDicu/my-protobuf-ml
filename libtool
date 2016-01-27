@@ -1,6 +1,6 @@
 #! /bin/sh
 # Generated automatically by config.status (protobuf-ml) 1.0
-# Libtool was configured on host Darias-MacBook-Pro.local:
+# Libtool was configured on host dhcp-10-248-23-136.eduroam.wireless.private.cam.ac.uk:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.
