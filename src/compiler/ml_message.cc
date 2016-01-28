@@ -156,7 +156,7 @@ namespace ml {
 	}
 
 	void MessageGenerator::GenerateFunctions(io::Printer* printer) {
-
+		
 	}
 
 }  // namespace ml

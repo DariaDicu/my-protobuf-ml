@@ -3,7 +3,7 @@
 (* For now only considering integers, no floats or zigzags *)
 type byte = Word8.word
 type key = int * int
-datatype errorCode = PARSE;
+datatype errorCode = PARSE | ENCODE;
 exception Exception of errorCode*string
 
 signature BYTE = 
@@ -166,17 +166,66 @@ in
 		rev (first_byte::byte_list)
 end
 
+
+(* Returns a Word8Vector (be careful, not a buffer.) *)
 fun encodeVarint value = Word8Vector.fromList
 	(encodeVarint_core [] value)
 
+(* Returns a Word8Vector of size 4. *)
+fun encode32 number =
+let 
+	val vect = Word8Vector.tabulate (4, fn i =>
+		Word8.fromInt(IntInf.andb(
+			(IntInf.~>>(number, Word.fromInt (i*8))), 255))
+	)
+in
+	vect
+end
+
+(* Returns a Word8Vector of size 8. *)
+fun encode64 number =
+let 
+	val vect = Word8Vector.tabulate (8, fn i =>
+		Word8.fromInt(IntInf.andb((IntInf.~>>(number, Word.fromInt (i*8))), 255))
+	)
+in
+	vect
+end
+
+(* Encodes the (tag, code) pair into a varint representing the key. *)
+fun encodeKey (tag, code) = 
+let 
+	val key = IntInf.orb(IntInf.<<(tag, Word.fromInt 3), code)
+in
+	if (code < 0 orelse code > 5) then
+		raise Exception(ENCODE, "Attemping to encode unsupported wire type")
+	else 
+		encodeVarint key
+end		
 
 
+(* Encodes a string with a specific tag by prefixing it with key 
+and length. *)
+fun encodeString s tag = 
+let
+	(* Wire type of string is 2 (length delimited). *)
+	val encoded_key = encodeKey (tag, 2)
+	val encoded_length = encodeVarint (String.size s)
+	val encoded_body = Word8Vector.tabulate ((String.size s),
+		fn i => Byte.charToByte (String.sub (s, i))
+	)
+in
+	Word8Vector.concat [encoded_key, encoded_length, encoded_body]
+end
 
-
-
-
-
-
-
-
+(* Encodes a byte array with a specific tag by prefixing it with
+key and length. *)
+fun encodeByteArray bytes tag = 
+let
+	(* Wire type of byte sequence is 2 (length delimited). *)
+	val encoded_key = encodeKey (tag, 2)
+	val encoded_length = encodeVarint (Word8Vector.length bytes)
+in
+	Word8Vector.concat [encoded_key, encoded_length, bytes]
+end
 
