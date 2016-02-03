@@ -59,29 +59,51 @@ namespace ml {
 			"signature", signature);
 		}
 		printer->Indent();
+
+		// Print child signatures.
+		for (int i = 0; i < descriptor_->enum_type_count(); i++) {
+			EnumGenerator generator(descriptor_->enum_type(i));
+			generator.GenerateSignature(printer, false /* toplevel */);
+			// Print type alias.
+			string name = descriptor_->enum_type(i)->name();
+			UncapitalizeString(name);
+			printer->Print("type $name$\n", "name", name);
+		}
+
 		// Print child signatures.
 		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
 			MessageGenerator generator(descriptor_->nested_type(i));
 			generator.GenerateSignature(printer, false /* toplevel */);
-		}
-		// Note: no signature needed for enums.
-
-		// TODO: print contents of this signature.
-
-		printer->Print("type t\n");
-
-		// Print type names for nested messages.
-		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
+			// Print type alias.
 			string name = descriptor_->nested_type(i)->name();
 			UncapitalizeString(name);
 			printer->Print("type $name$\n", "name", name);
 		}
 
-		// Print type names for nested enums.
-		for (int i = 0; i < descriptor_->enum_type_count(); i++) {
-			string name = descriptor_->enum_type(i)->name();
-			UncapitalizeString(name);
-			printer->Print("type $name$\n", "name", name);
+		printer->Print("type t\n");
+
+		// Print function declarations for setters
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+
+			string type = GetFormattedTypeFromField(field);
+			UncapitalizeString(type);
+
+			string label = LabelName(field->label());
+
+			printer->Print("val set_$name$: t * $type$ $label$ -> unit\n",
+				"name", name,
+				"type", type,
+				"label", label);
+
+			// If repeated field, then generate add functions.
+			if (label == "list") {
+				printer->Print("val add_$name$: t * $type$ -> unit\n",
+					"name", name,
+					"type", type);
+			}
 		}
 
 		// End is the same regardless of toplevel being true/false.
@@ -93,7 +115,7 @@ namespace ml {
 		bool toplevel) {
 		// Generate structure.
 		string structure = descriptor_->name();
-		structure[0] = toupper(structure[0]);
+		CapitalizeString(structure);
 		//printer->Print("structure $structure$ :> $signature$ = ",
 		if (toplevel) {
 			string signature = descriptor_->name();
@@ -111,7 +133,7 @@ namespace ml {
 		// Print structures for nested types.
 		for (int i = 0; i < descriptor_->enum_type_count(); i++) {
 			EnumGenerator generator(descriptor_->enum_type(i));
-			generator.GenerateStructure(printer);
+			generator.GenerateStructure(printer, false /* toplevel */);
 		}
 		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
 			MessageGenerator generator(descriptor_->nested_type(i));
@@ -130,7 +152,7 @@ namespace ml {
 
 			// TODO: decide if default should be required.
 			string label = LabelName(field->label());
-			printer->Print("$name$: $type$ $label$",
+			printer->Print("$name$: $type$ $label$ ref",
 				"name", name,
 				"type", type,
 				"label", label);
@@ -143,6 +165,32 @@ namespace ml {
 		printer->Outdent();
 		// TODO: Print alias for main type declaration.
 		printer->Print("}\n");
+
+		// Printing setters.
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+
+			string type = GetFormattedTypeFromField(field);
+			UncapitalizeString(type);
+
+			string label = LabelName(field->label());
+
+			printer->Print("fun set_$name$ (msg, value) = \n"
+				"(#$name$ msg) := value\n",
+				"name", name);
+
+			// If repeated field, then generate add functions.
+			if (label == "list") {
+				printer->Print("fun add_$name$ (msg, value) = \n"
+					"(#$name$ msg) := value :: !(#$name$ msg)\n",
+					"name", name);
+			}
+		}
+
+
+
 		printer->Outdent();
 		printer->Print("end\n");
 
@@ -154,11 +202,6 @@ namespace ml {
 			"type_name", type_name,
 			"structure_name", structure_name);
 	}
-
-	void MessageGenerator::GenerateFunctions(io::Printer* printer) {
-		
-	}
-
 }  // namespace ml
 }  // namespace compiler
 }  // namespace protobuf

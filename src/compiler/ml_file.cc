@@ -52,11 +52,11 @@ FileGenerator::FileGenerator(const FileDescriptor* file) : file_(file) {
 FileGenerator::~FileGenerator() {}
 
 void FileGenerator::Generate(io::Printer* printer) {
+	// First generate structures/signatures.
 	for (int i = 0; i < file_->enum_type_count(); i++) {
 		EnumGenerator generator(file_->enum_type(i));
-		generator.GenerateStructure(printer);
-		printer->Print("\n");
-		generator.GenerateFunctions(printer);
+		generator.GenerateSignature(printer, true /* toplevel */);
+		generator.GenerateStructure(printer, true /* toplevel */);
 		printer->Print("\n");
 	}
 	for (int i = 0; i < file_->message_type_count(); i++) {
@@ -64,8 +64,6 @@ void FileGenerator::Generate(io::Printer* printer) {
 		generator.GenerateSignature(printer, true /* toplevel */);
 		printer->Print("\n");
 		generator.GenerateStructure(printer, true /* toplevel */);
-		printer->Print("\n");
-		generator.GenerateFunctions(printer);
 		printer->Print("\n");
 	}
 }

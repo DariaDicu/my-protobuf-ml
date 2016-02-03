@@ -62,12 +62,40 @@ namespace ml {
 
 	EnumGenerator::~EnumGenerator() {};
 
-	void EnumGenerator::GenerateStructure(io::Printer* printer) {
-		// Type name will be camelCased with first letter lowercase.
-		string type = descriptor_->name();
-		UncapitalizeString(type);
+	void EnumGenerator::GenerateSignature(io::Printer* printer, bool toplevel) {
+		if (toplevel) {
+			string signature = descriptor_->name();
+			UpperString(&signature);
+			printer->Print("signature $signature$ =\nsig\n",
+			"signature", signature);
+		} else {
+			string signature = descriptor_->name();
+			printer->Print("structure $signature$ : sig\n",
+			"signature", signature);
+		}
+		printer->Indent();
+		printer->Print("type t\n");
+		printer->Outdent();
+		printer->Print("end\n");
+	}
 
-		printer->Print("datatype $type$ = ", "type", type);
+	void EnumGenerator::GenerateStructure(io::Printer* printer, bool toplevel) {
+		string structure = descriptor_->name();
+		CapitalizeString(structure);
+		if (toplevel) {
+			string signature = descriptor_->name();
+			UpperString(&signature);
+			printer->Print("structure $structure$ :> $signature$ = \n",
+				"structure", structure,
+				"signature", signature);
+		} else {
+			printer->Print("structure $structure$ = \n",
+				"structure", structure);
+		}
+
+		printer->Print("struct\n");
+		printer->Indent();
+		printer->Print("datatype t = ");
 		printer->Indent();
 		for (int i = 0; i < canonical_values_.size(); i++) {
 			// Capitalize each constructor.
@@ -80,9 +108,16 @@ namespace ml {
 		}
 		printer->Print("\n");
 		printer->Outdent();
-	}
+		printer->Outdent();
+		printer->Print("end\n");
 
-	void EnumGenerator::GenerateFunctions(io::Printer* printer) {
+		string type_name = descriptor_->name();
+		string structure_name = descriptor_->name();
+		UncapitalizeString(type_name);
+		CapitalizeString(structure_name);
+		printer->Print("type $type_name$ = $structure_name$.t\n",
+			"type_name", type_name,
+			"structure_name", structure_name);
 	}
 }  // namespace ml
 }  // namespace compiler

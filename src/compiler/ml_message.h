@@ -24,7 +24,6 @@ class MessageGenerator {
 
   void GenerateSignature(io::Printer* printer, bool toplevel);
   void GenerateStructure(io::Printer* printer, bool toplevel);
-  void GenerateFunctions(io::Printer* printer);
 
  private:
   const Descriptor* descriptor_;
