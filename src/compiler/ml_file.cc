@@ -52,6 +52,9 @@ FileGenerator::FileGenerator(const FileDescriptor* file) : file_(file) {
 FileGenerator::~FileGenerator() {}
 
 void FileGenerator::Generate(io::Printer* printer) {
+	// Import ProtoBuf ML core library.
+	printer->Print("use \"MlGenLib.ml\";\n\n");
+
 	// First generate structures/signatures.
 	for (int i = 0; i < file_->enum_type_count(); i++) {
 		EnumGenerator generator(file_->enum_type(i));

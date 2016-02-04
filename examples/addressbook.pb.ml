@@ -1,3 +1,5 @@
+use "MlGenLib.ml";
+
 signature PHONETYPE =
 sig
   type t

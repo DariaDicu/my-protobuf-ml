@@ -6,7 +6,7 @@ type key = int * int
 datatype errorCode = PARSE | ENCODE;
 exception Exception of errorCode*string
 
-signature BYTE = 
+signature ML_GEN_BYTE = 
 sig
 	val fromInt : int -> byte
 	val toInt : byte -> int
@@ -14,7 +14,7 @@ sig
 	val getTail : byte -> byte
 end
 
-structure Byte :> BYTE = 
+structure MlGenByte :> ML_GEN_BYTE = 
 struct
 	fun fromInt n = Word8.fromInt n
 	fun toInt b = Word8.toInt b
@@ -66,8 +66,8 @@ let
 	(* TODO - Treat overflow? *)
 	(* little endian *)
 	val next_val = 
-		prev_val + IntInf.<<((Byte.toInt (Byte.getTail b)), Word.fromInt(i * 7))
-	val msb = Byte.getMsb b
+		prev_val + IntInf.<<((MlGenByte.toInt (MlGenByte.getTail b)), Word.fromInt(i * 7))
+	val msb = MlGenByte.getMsb b
 in
 	if (msb = true) then 
 		(* if msb in this byte is 1, varint contains the next byte *)
@@ -94,7 +94,7 @@ fun parseFixed i remaining buff prev_val =
 let
 	val (b, next_buff) = ByteBuffer.nextByte buff
 	val next_val = 
-		prev_val + IntInf.<<((Byte.toInt (Byte.getTail b)), Word.fromInt(i * 7))
+		prev_val + IntInf.<<((MlGenByte.toInt (MlGenByte.getTail b)), Word.fromInt(i * 7))
 in
 	if (i > 1) then
 		parseFixed (i+1) (remaining-1) next_buff next_val
