@@ -48,6 +48,7 @@ sig
     type t
     val encode : t * tag -> Word8Vector.vector
     val parse : ByteBuffer.buffer -> (t * tag) * parseResult
+    val parseNextField : ByteBuffer.buffer -> t -> int -> (t * tag) * parseResult
     val set_number: t * string option -> unit
     val set_type_: t * phoneType option -> unit
   end
@@ -55,6 +56,7 @@ sig
   type t
   val encode : t * tag -> Word8Vector.vector
   val parse : ByteBuffer.buffer -> (t * tag) * parseResult
+  val parseNextField : ByteBuffer.buffer -> t -> int -> (t * tag) * parseResult
   val set_name: t * string option -> unit
   val set_id: t * int option -> unit
   val set_email: t * string option -> unit
