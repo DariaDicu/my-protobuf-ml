@@ -75,6 +75,9 @@ namespace ml {
 		}
 		printer->Indent();
 		printer->Print("type t\n");
+		printer->Print("val encode : t * tag -> Word8Vector.vector\n");
+		printer->Print("val parse : ByteBuffer.buffer -> "
+			"(t * tag) * parseResult\n");
 		printer->Outdent();
 		printer->Print("end\n");
 	}
@@ -108,6 +111,66 @@ namespace ml {
 		}
 		printer->Print("\n");
 		printer->Outdent();
+
+		// Encode function;
+		printer->Print("fun encode (e, tag) =\n");
+		printer->Indent();
+		printer->Print("let\n");
+		printer->Indent();
+		printer->Print("val v = case (e) of ");
+		for (int i = 0; i < canonical_values_.size(); i++) {
+			// Capitalize each constructor.
+			string constructor = canonical_values_[i]->name();
+			CapitalizeString(constructor);
+
+			string tag = to_string(canonical_values_[i]->number());
+
+			if (i > 0) printer->Print("\n| ");
+			printer->Print("$constructor$ => encodeVarint $tag$", 
+				"constructor", constructor,
+				"tag", tag);
+		}
+		printer->Print("\n");
+		printer->Print("val key = encodeKey (tag, Code(0))\n");
+		printer->Outdent();
+		printer->Print("in\n");
+		printer->Indent();
+		printer->Print("Word8Vector.concat [key, v]\n");
+		printer->Outdent();
+		printer->Print("end\n");
+		printer->Outdent();
+
+		// Decode function;
+		printer->Print("fun parse buff =\n");
+		printer->Indent();
+		printer->Print("let\n");
+		printer->Indent();
+		printer->Print("val ((e, tag), buff) = parseEnum buff\n");
+		printer->Print("val enum_val = case (e) of ");
+		for (int i = 0; i < canonical_values_.size(); i++) {
+			// Capitalize each constructor.
+			string constructor = canonical_values_[i]->name();
+			CapitalizeString(constructor);
+
+			string tag = to_string(canonical_values_[i]->number());
+
+			if (i > 0) printer->Print("\n| ");
+			printer->Print("$tag$ => $constructor$", 
+				"constructor", constructor,
+				"tag", tag);
+		}
+		// Case when not matched
+		printer->Print("\n| n => raise Exception(PARSE, "
+			"\"Attempting to parse enum of unknown tag value.\")\n");
+		printer->Outdent();
+		printer->Print("in\n");
+		printer->Indent();
+		printer->Print("((enum_val, tag), buff)\n");
+		printer->Outdent();
+		printer->Print("end\n");
+		printer->Outdent();
+
+		// End of structure signature.
 		printer->Outdent();
 		printer->Print("end\n");
 

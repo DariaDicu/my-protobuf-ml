@@ -1,0 +1,20 @@
+
+fun encodeVarint_core byte_list remaining_int = 
+let
+	(* Binary-and to get least significant 7 bits *)
+	val last7bits = IntInf.andb(remaining_int, 127)
+	val remaining_int = IntInf.~>>(remaining_int, Word.fromInt 7)
+	val msb = if (remaining_int > 0) then 1 else 0
+	(* The new byte we add to the list *)
+	val first_byte = if (msb = 1) then Word.fromInt (IntInf.orb(last7bits, 128)) else Word.fromInt last7bits
+in
+	if (msb = 1) then
+		(* Making first bit of byte 1 and appending to list *)
+		encodeVarint_core (first_byte::byte_list) remaining_int
+	else
+		(* Resulting list is in reverse order, so must reverse it. *)
+		rev (first_byte::byte_list)
+end
+
+fun encodeVarint value = Word8Vector.fromList
+	(encodeVarint_core [] value)

@@ -81,6 +81,9 @@ namespace ml {
 		}
 
 		printer->Print("type t\n");
+		printer->Print("val encode : t * tag -> Word8Vector.vector\n");
+		printer->Print("val parse : ByteBuffer.buffer -> "
+			"(t * tag) * parseResult\n");
 
 		// Print function declarations for setters
 		for (int i = 0; i < descriptor_->field_count(); i++) {
@@ -188,6 +191,182 @@ namespace ml {
 					"name", name);
 			}
 		}
+
+
+		// Printing the encode function.
+		printer->Print("fun encode (m, tag) = \n");
+		printer->Indent();
+		printer->Print("let\n");
+		printer->Indent();
+		printer->Print("val l = [");
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+			string type_name = field->type_name();
+			string tag = to_string(field->number());
+
+			// Get name of the helper function we need to call.
+			string function_name;
+
+			bool is_repeated = (field->label() == 
+				FieldDescriptor::LABEL_REPEATED);
+
+			bool is_optional = (field->label() == 
+				FieldDescriptor::LABEL_OPTIONAL);
+
+			if (type_name.compare("message") == 0 || 
+				type_name.compare("enum") == 0) {
+				string type = GetFormattedTypeFromField(field);
+				CapitalizeString(type);
+				function_name = type + ".encode";
+			} else {
+				CapitalizeString(type_name);
+				function_name = "encode" + type_name;
+			}
+			if (i > 0) printer->Print(", \n");
+			if (is_repeated) {
+				printer->Print("(encodeRepeated $enc_func$) (!(#$name$ m), "
+					"Tag($tag$))",
+					"name", name,
+					"enc_func", function_name,
+					"tag", tag);
+			} else if (is_optional) {
+				printer->Print("(encodeOptional $enc_func$) (!(#$name$ m), "
+					"Tag($tag$))",
+					"name", name,
+					"enc_func", function_name,
+					"tag", tag);
+			} else {
+				printer->Print("$enc_func$ (!(#$name$ m), Tag($tag$))", 
+					"name", name,
+					"enc_func", function_name,
+					"tag", tag);
+			}
+		}
+		printer->Print("]\n");
+		printer->Outdent();
+		printer->Print("in\n");
+		printer->Indent();
+		printer->Print("Word8Vector.concat l\n");
+		printer->Outdent();
+		printer->Print("end\n");
+		printer->Outdent();
+
+		// Printing the decode next field function. This is hidden from signature.
+		printer->Print("fun parseNextField buff obj remaining = \n");
+		printer->Indent();
+		printer->Print("if (remaining == 0) then\n");
+		printer->Indent();
+		//TODO: count total bytes read... 0 for now. 
+		printer->Print("(obj, ParseResult(buff, 0))\n");
+		printer->Outdent();
+		printer->Print("elseif (remaining < 0) then\n");
+		printer->Indent();
+		printer->Print("raise Exception(PARSE, \"Field encoding does not match "
+			"length in message header\")\n");
+		printer->Outdent();
+		printer->Print("else\n");
+		printer->Indent();
+		printer->Print("let\n");
+		printer->Indent();
+		printer->Print("val ((Tag(t), Code(c)), parse_result) = "
+			"parseKey buff\n");
+		printer->Print("val ParseResult(buff, ParsedByteCount(keyByteCount)) = "
+				"parse_result\n");
+		printer->Print("val remaining = remaining - keyByteCount\n");
+		printer->Outdent();
+		printer->Print("in\n");
+		printer->Indent();
+		printer->Print("if (remaining <= 0) then\n");
+		printer->Indent();
+		printer->Print("raise Exception(PARSE, \"Not enough bytes in message "
+			"to parse the message fields.\")\n");
+		printer->Outdent();
+		printer->Print("else case (t) of ");
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			/*
+			ML code will look like:
+			case (tag_) of 0 => 
+			let
+				val (field_value, parsed_bytes) = parseFuncForType buff
+			in
+				if (remaining > parsed_bytes)
+					(ModuleName.setOrAddForLabel (obj, field_value),
+					parseNextField buff obj (remaining - parsed_bytes))
+				else 
+					raise Exception(PARSE, 
+						"Error in matching the message length with fields length.")
+			end
+			| 1 => ...
+			*/
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+			string type_name = field->type_name();
+			string tag = to_string(field->number());
+			string module_name = GetFormattedTypeFromField(field);
+			CapitalizeString(module_name);
+
+			string function_name;
+			if (type_name.compare("message") == 0 || 
+			  type_name.compare("enum") == 0) {
+				function_name = module_name + ".parse";
+			} else {
+				CapitalizeString(type_name);
+				function_name = "parse" + type_name;
+			}
+		
+			bool is_repeated = (field->label() == 
+				FieldDescriptor::LABEL_REPEATED);
+
+			bool is_optional = (field->label() == 
+				FieldDescriptor::LABEL_OPTIONAL);
+
+			// TODO: implement functionality for compact fields.
+			string setter_name;
+
+			if (is_repeated) {
+				setter_name = "add_" + name;
+			} else {
+				setter_name = "set_" + name;
+			}
+
+			if (i > 0) printer->Print("\n| ");
+			printer->Print("$tag$ => \n", "tag", tag);
+			printer->Indent();
+			printer->Print("let\n");
+			printer->Indent();
+			printer->Print("val (field_value, parse_result) = "
+				"$function_name$ buff\n",
+				"function_name", function_name);
+			printer->Print("val ParseResult(buff, "
+				"ParsedByteCount(parsed_bytes)) = parse_result\n");
+			printer->Outdent();
+			printer->Print("in\n");
+			printer->Indent();
+			printer->Print("if (remaining > parsed_bytes) then\n");
+			printer->Indent();
+			/*$parent_name$.*/
+			printer->Print("($setter$ (obj, field_value);\n"
+				"parseNextField buff obj (remaining - parsed_bytes))\n",
+				"parent_name", structure,
+				"setter", setter_name);
+			printer->Outdent();
+			printer->Print("else\n");
+			printer->Indent();
+			printer->Print("raise Exception(PARSE, \"Error in matching the "
+				"message length with fields length.\")\n");
+			printer->Outdent();
+			printer->Outdent();
+			printer->Print("end");
+			printer->Outdent();
+		}
+		printer->Print("\n");
+		printer->Outdent();
+		printer->Outdent();
+		printer->Print("end\n");
+		printer->Outdent();
 
 
 
