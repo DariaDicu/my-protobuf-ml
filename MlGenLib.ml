@@ -232,7 +232,12 @@ fun encodePacked_core encode_fun [] = Word8Vector.fromList []
   	[encode_fun x, encodePacked_core encode_fun xs]
 
 fun encodePackedRepeated encode_fun encoded_key l = 
-	Word8Vector.concat [encoded_key, encodePacked_core encode_fun l]
+let
+	val encoded_body = encodePacked_core encode_fun l
+	val encoded_length = encodeVarint (Word8Vector.length encoded_body)
+in
+	Word8Vector.concat [encoded_key, encoded_length, encoded_body]
+end
 
 fun encodeOptional encode_fun encoded_key NONE = Word8Vector.fromList []
   | encodeOptional encode_fun encoded_key (SOME(x)) = 
@@ -260,15 +265,15 @@ fun encodeInt64 n = encodeVarint n
 (* obj -> Partially constructed object of type Builder. *)
 (* buff -> Input buffer. *)
 (* remaining -> Number of remaining bits in the message, as parsed from key. *)
-fun decodeNextHelper decode_fun modifier_fun rec_fun obj buff remaining = 
-  let
+fun decodeNextUnpacked decode_fun modifier_fun rec_fun obj buff remaining = 
+let
     val (field_value, parse_result) = decode_fun buff
     val ParseResult(buff, ParsedByteCount(parsed_bytes)) = parse_result
-    val obj = if (remaining > parsed_bytes) then modifier_fun (obj, field_value)
+    val obj = if (remaining >= parsed_bytes) then modifier_fun (obj, field_value)
 		else raise Exception(PARSE, "Error in matching the message length with fields length.")
-  in
-      rec_fun buff obj (remaining - parsed_bytes)
-  end
+in
+    rec_fun buff obj (remaining - parsed_bytes)
+end
 
 fun decodeFullHelper next_field_fun build_fun empty_obj buff =
 let
@@ -279,6 +284,35 @@ in
 	(build_fun obj, ParseResult(buff, ParsedByteCount(lenBytes+length)))
 end
 
+(* Decodes the next packed field and uses the modifier to add it to obj. *)
+(* decode_fun -> Function for decoding individual field. *)
+(* modifier_fun -> Will be add_someName, the modifier that adds the field to the list. *)
+(* Returns a tuple (obj, buff) *)
+(* Not to be exposed, just used by decodeNextPacked *)
+fun decodeNextPacked_core decode_fun modifier_fun obj buff remaining =
+let
+    val (field_value, parse_result) = decode_fun buff
+    val ParseResult(buff, ParsedByteCount(parsed_bytes)) = parse_result
+    val obj = if (remaining >= parsed_bytes) then modifier_fun (obj, field_value)
+		else raise Exception(PARSE, "Error in matching the specified packed length with actual length.")
+in
+	if (remaining > parsed_bytes) then
+		decodeNextPacked_core decode_fun modifier_fun obj buff (remaining - parsed_bytes)
+	else (* We have parsed the last field. *)
+		(obj, buff)
+end
 
-(* TODO add fixed32, 64 etc *)
+
+fun decodeNextPacked decode_fun modifier_fun rec_fun obj buff remaining = 
+let 
+	val (length, ParseResult(buff, ParsedByteCount(lenBytes))) = 
+		decodeVarint buff
+	val (obj, buff) = decodeNextPacked_core decode_fun modifier_fun obj buff length
+	val parsed_bytes = lenBytes + length
+in 
+	rec_fun buff obj (remaining - parsed_bytes)
+end
+
+
+
 

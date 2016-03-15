@@ -176,11 +176,13 @@ namespace ml {
 			if ((!is_required) && (!is_repeated)) is_optional = true;
 
 			// Default value for packed encoding is true, unless otherwise 
-			// specified.
-			bool is_packed = true;
+			// specified. Only primitives can be packed.
+			bool is_packed = (code == "2") ? false : true;
 			if(field->options().has_packed() && !field->options().packed()) {
 				is_packed = false;
 			}
+			// Packed fields have wire type 2.
+			if (is_packed) code = "2";
 
 			if (type_name.compare("message") == 0 || 
 				type_name.compare("enum") == 0) {
@@ -288,6 +290,7 @@ namespace ml {
 			string tag = to_string(field->number());
 			string module_name = GetFormattedTypeFromField(field);
 			CapitalizeString(module_name);
+			string code = to_string(GetWireCode(field->type()));
 
 			string function_name;
 			if (type_name.compare("message") == 0 || 
@@ -315,10 +318,23 @@ namespace ml {
 
 			if (i > 0) printer->Print("\n| ");
 			printer->Print("$tag$ => ", "tag", tag);
-			printer->Print("decodeNextHelper ($function_name$) "
-				"($setter_name$) (decodeNextField) obj buff remaining",
-				"function_name", function_name,
-				"setter_name", setter_name);
+
+			// If it is possible to get packed encoding (wire type is not zero),
+			// then we must print function for packed encoding if extracted
+			// wire type is 2 (it becomes 2 for packed encoded fields). 
+			if (is_repeated && code != "2") {
+				printer->Print("if (c = 2) then (decodeNextPacked ($function_name$) "
+					"($setter_name$) (decodeNextField) obj buff remaining)\n"
+					"else (decodeNextUnpacked ($function_name$) "
+					"($setter_name$) (decodeNextField) obj buff remaining)\n",
+					"function_name", function_name,
+					"setter_name", setter_name);
+			} else {
+				printer->Print("decodeNextUnpacked ($function_name$) "
+					"($setter_name$) (decodeNextField) obj buff remaining",
+					"function_name", function_name,
+					"setter_name", setter_name);
+			}
 		}
 		// Raise exception for unknown tag. TODO: skip based on wire type, length.
 		printer->Print("\n| n => raise Exception(PARSE, \"Unknown field tag\")\n");
@@ -372,6 +388,10 @@ namespace ml {
 					"name", name);
 
 				printer->Print("val set_$name$: t * $type$ list -> t\n",
+					"name", name,
+					"type", type);
+
+				printer->Print("val merge_$name$: t * $type$ list -> t\n",
 					"name", name,
 					"type", type);
 
@@ -461,11 +481,11 @@ namespace ml {
 				"((#$name$ msg) := NONE; msg)\n",
 				"name", name);
 
-			printer->Print("fun set_$name$ (msg, v) = \n"
-				"((#$name$ msg) := SOME(v); msg)\n",
+			printer->Print("fun set_$name$ (msg, l) = \n"
+				"((#$name$ msg) := SOME(l); msg)\n",
 				"name", name);
 
-			// If repeated field, then generate add functions.
+			// If repeated field, then generate add and merge functions.
 			if (label == "list") {
 				printer->Print("fun add_$name$ (msg, v) = \n",
 					"name", name);
@@ -473,6 +493,15 @@ namespace ml {
 				printer->Print("((case (!(#$name$ msg)) of "
 					"NONE => (#$name$ msg) := SOME([v])\n"
 					"| SOME(l) => (#$name$ msg) := SOME(v :: l)); msg)\n",
+					"name", name);
+				printer->Outdent();
+
+				printer->Print("fun merge_$name$ (msg, l) = \n",
+					"name", name);
+				printer->Indent();
+				printer->Print("((case (!(#$name$ msg)) of "
+					"NONE => (#$name$ msg) := SOME(l)\n"
+					"| SOME(ll) => (#$name$ msg) := SOME(List.concat [ll, l])); msg)\n",
 					"name", name);
 				printer->Outdent();
 			}

@@ -2,7 +2,11 @@ use "MlGenLib.ml";
 
 signature PHONETYPE =
 sig
-  type t
+  datatype t = MOBILE
+    | HOME
+    | WORK
+    | UNKNOWN
+
   val encode : t -> Word8Vector.vector
   val decode : ByteBuffer.buffer -> t * parseResult
 end
@@ -34,7 +38,10 @@ type phoneType = PhoneType.t
 signature PERSON =
 sig
   structure PhoneType : sig
-    type t
+    datatype t = MOBILE
+      | HOME
+      | WORK
+
     val encode : t -> Word8Vector.vector
     val decode : ByteBuffer.buffer -> t * parseResult
   end
@@ -44,6 +51,7 @@ sig
     structure Builder : sig
       type t
       type parentType
+      type phoneType
 
       val clear_number: t -> t
       val set_number: t * string -> t
@@ -55,6 +63,7 @@ sig
 
       val build : t -> parentType
     end where type parentType = t
+      and type phoneType = phoneType
     val encode : t -> Word8Vector.vector
     val decode : ByteBuffer.buffer -> t * parseResult
   end
@@ -75,7 +84,13 @@ sig
 
     val clear_phones: t -> t
     val set_phones: t * phoneNumber list -> t
+    val merge_phones: t * phoneNumber list -> t
     val add_phones: t * phoneNumber -> t
+
+    val clear_cnp: t -> t
+    val set_cnp: t * int list -> t
+    val merge_cnp: t * int list -> t
+    val add_cnp: t * int -> t
 
     val init : unit -> t
 
@@ -117,6 +132,7 @@ struct
     structure Builder = 
     struct
       type parentType = t
+      type phoneType = phoneType
       type t = {
         number: string option ref,
         type_: phoneType option ref
@@ -124,13 +140,13 @@ struct
 
       fun clear_number msg = 
       ((#number msg) := NONE; msg)
-      fun set_number (msg, v) = 
-      ((#number msg) := SOME(v); msg)
+      fun set_number (msg, l) = 
+      ((#number msg) := SOME(l); msg)
 
       fun clear_type_ msg = 
       ((#type_ msg) := NONE; msg)
-      fun set_type_ (msg, v) = 
-      ((#type_ msg) := SOME(v); msg)
+      fun set_type_ (msg, l) = 
+      ((#type_ msg) := SOME(l); msg)
 
       fun init () = { number = ref NONE,
         type_ = ref NONE
@@ -149,13 +165,14 @@ struct
     fun encode m = 
       let
         val number = (encodeOptional encodeString) (encodeKey(Tag(1), Code(2))) (#number m)
-        val type_ = (encodeOptional PhoneType.encode) (encodeKey(Tag(2), Code(0))) (#type_ m)
+        val type_ = (encodeOptional PhoneType.encode) (encodeKey(Tag(2), Code(2))) (#type_ m)
       in
         Word8Vector.concat [
           number,
           type_
         ]
       end
+
     fun decodeNextField buff obj remaining = 
       if (remaining = 0) then
         (obj, buff)
@@ -169,8 +186,8 @@ struct
         in
           if (remaining <= 0) then
             raise Exception(PARSE, "Not enough bytes left after parsing message field key.")
-          else case (t) of 1 => decodeNextHelper (decodeString) (Builder.set_number) (decodeNextField) obj buff remaining
-          | 2 => decodeNextHelper (PhoneType.decode) (Builder.set_type_) (decodeNextField) obj buff remaining
+          else case (t) of 1 => decodeNextUnpacked (decodeString) (Builder.set_number) (decodeNextField) obj buff remaining
+          | 2 => decodeNextUnpacked (PhoneType.decode) (Builder.set_type_) (decodeNextField) obj buff remaining
           | n => raise Exception(PARSE, "Unknown field tag")
         end
 
@@ -182,7 +199,8 @@ struct
     name: string option,
     id: int option,
     email: string option,
-    phones: phoneNumber list
+    phones: phoneNumber list,
+    cnp: int list
   }
   structure Builder = 
   struct
@@ -191,36 +209,52 @@ struct
       name: string option ref,
       id: int option ref,
       email: string option ref,
-      phones: phoneNumber list option ref
+      phones: phoneNumber list option ref,
+      cnp: int list option ref
     }
 
     fun clear_name msg = 
     ((#name msg) := NONE; msg)
-    fun set_name (msg, v) = 
-    ((#name msg) := SOME(v); msg)
+    fun set_name (msg, l) = 
+    ((#name msg) := SOME(l); msg)
 
     fun clear_id msg = 
     ((#id msg) := NONE; msg)
-    fun set_id (msg, v) = 
-    ((#id msg) := SOME(v); msg)
+    fun set_id (msg, l) = 
+    ((#id msg) := SOME(l); msg)
 
     fun clear_email msg = 
     ((#email msg) := NONE; msg)
-    fun set_email (msg, v) = 
-    ((#email msg) := SOME(v); msg)
+    fun set_email (msg, l) = 
+    ((#email msg) := SOME(l); msg)
 
     fun clear_phones msg = 
     ((#phones msg) := NONE; msg)
-    fun set_phones (msg, v) = 
-    ((#phones msg) := SOME(v); msg)
+    fun set_phones (msg, l) = 
+    ((#phones msg) := SOME(l); msg)
     fun add_phones (msg, v) = 
       ((case (!(#phones msg)) of NONE => (#phones msg) := SOME([v])
       | SOME(l) => (#phones msg) := SOME(v :: l)); msg)
+    fun merge_phones (msg, l) = 
+      ((case (!(#phones msg)) of NONE => (#phones msg) := SOME(l)
+      | SOME(ll) => (#phones msg) := SOME(List.concat [ll, l])); msg)
+
+    fun clear_cnp msg = 
+    ((#cnp msg) := NONE; msg)
+    fun set_cnp (msg, l) = 
+    ((#cnp msg) := SOME(l); msg)
+    fun add_cnp (msg, v) = 
+      ((case (!(#cnp msg)) of NONE => (#cnp msg) := SOME([v])
+      | SOME(l) => (#cnp msg) := SOME(v :: l)); msg)
+    fun merge_cnp (msg, l) = 
+      ((case (!(#cnp msg)) of NONE => (#cnp msg) := SOME(l)
+      | SOME(ll) => (#cnp msg) := SOME(List.concat [ll, l])); msg)
 
     fun init () = { name = ref NONE,
       id = ref NONE,
       email = ref NONE,
-      phones = ref NONE
+      phones = ref NONE,
+      cnp = ref NONE
     }
 
     fun build msg = 
@@ -229,28 +263,33 @@ struct
       val idVal = (!(#id msg))
       val emailVal = (!(#email msg))
       val phonesVal = case (!(#phones msg)) of NONE => [] | SOME(v) => v
+      val cnpVal = case (!(#cnp msg)) of NONE => [] | SOME(v) => v
     in { 
       name = nameVal,
       id = idVal,
       email = emailVal,
-      phones = phonesVal
+      phones = phonesVal,
+      cnp = cnpVal
     }
     end
   end
   fun encode m = 
     let
       val name = (encodeOptional encodeString) (encodeKey(Tag(1), Code(2))) (#name m)
-      val id = (encodeOptional encodeInt32) (encodeKey(Tag(2), Code(0))) (#id m)
+      val id = (encodeOptional encodeInt32) (encodeKey(Tag(2), Code(2))) (#id m)
       val email = (encodeOptional encodeString) (encodeKey(Tag(3), Code(2))) (#email m)
-      val phones = (encodePackedRepeated PhoneNumber.encode) (encodeKey(Tag(4), Code(2))) (#phones m)
+      val phones = (encodeRepeated PhoneNumber.encode) (encodeKey(Tag(4), Code(2))) (#phones m)
+      val cnp = (encodePackedRepeated encodeInt32) (encodeKey(Tag(5), Code(2))) (#cnp m)
     in
       Word8Vector.concat [
         name,
         id,
         email,
-        phones
+        phones,
+        cnp
       ]
     end
+
   fun decodeNextField buff obj remaining = 
     if (remaining = 0) then
       (obj, buff)
@@ -264,10 +303,13 @@ struct
       in
         if (remaining <= 0) then
           raise Exception(PARSE, "Not enough bytes left after parsing message field key.")
-        else case (t) of 1 => decodeNextHelper (decodeString) (Builder.set_name) (decodeNextField) obj buff remaining
-        | 2 => decodeNextHelper (decodeInt32) (Builder.set_id) (decodeNextField) obj buff remaining
-        | 3 => decodeNextHelper (decodeString) (Builder.set_email) (decodeNextField) obj buff remaining
-        | 4 => decodeNextHelper (PhoneNumber.decode) (Builder.add_phones) (decodeNextField) obj buff remaining
+        else case (t) of 1 => decodeNextUnpacked (decodeString) (Builder.set_name) (decodeNextField) obj buff remaining
+        | 2 => decodeNextUnpacked (decodeInt32) (Builder.set_id) (decodeNextField) obj buff remaining
+        | 3 => decodeNextUnpacked (decodeString) (Builder.set_email) (decodeNextField) obj buff remaining
+        | 4 => decodeNextUnpacked (PhoneNumber.decode) (Builder.add_phones) (decodeNextField) obj buff remaining
+        | 5 => if (c = 2) then (decodeNextPacked (decodeInt32) (Builder.add_cnp) (decodeNextField) obj buff remaining)
+        else (decodeNextUnpacked (decodeInt32) (Builder.add_cnp) (decodeNextField) obj buff remaining)
+
         | n => raise Exception(PARSE, "Unknown field tag")
       end
 
@@ -285,6 +327,7 @@ sig
 
     val clear_people: t -> t
     val set_people: t * person list -> t
+    val merge_people: t * person list -> t
     val add_people: t * person -> t
 
     val init : unit -> t
@@ -309,11 +352,14 @@ struct
 
     fun clear_people msg = 
     ((#people msg) := NONE; msg)
-    fun set_people (msg, v) = 
-    ((#people msg) := SOME(v); msg)
+    fun set_people (msg, l) = 
+    ((#people msg) := SOME(l); msg)
     fun add_people (msg, v) = 
       ((case (!(#people msg)) of NONE => (#people msg) := SOME([v])
       | SOME(l) => (#people msg) := SOME(v :: l)); msg)
+    fun merge_people (msg, l) = 
+      ((case (!(#people msg)) of NONE => (#people msg) := SOME(l)
+      | SOME(ll) => (#people msg) := SOME(List.concat [ll, l])); msg)
 
     fun init () = { people = ref NONE
     }
@@ -328,12 +374,13 @@ struct
   end
   fun encode m = 
     let
-      val people = (encodePackedRepeated Person.encode) (encodeKey(Tag(1), Code(2))) (#people m)
+      val people = (encodeRepeated Person.encode) (encodeKey(Tag(1), Code(2))) (#people m)
     in
       Word8Vector.concat [
         people
       ]
     end
+
   fun decodeNextField buff obj remaining = 
     if (remaining = 0) then
       (obj, buff)
@@ -347,7 +394,7 @@ struct
       in
         if (remaining <= 0) then
           raise Exception(PARSE, "Not enough bytes left after parsing message field key.")
-        else case (t) of 1 => decodeNextHelper (Person.decode) (Builder.add_people) (decodeNextField) obj buff remaining
+        else case (t) of 1 => decodeNextUnpacked (Person.decode) (Builder.add_people) (decodeNextField) obj buff remaining
         | n => raise Exception(PARSE, "Unknown field tag")
       end
 

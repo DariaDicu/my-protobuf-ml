@@ -78,9 +78,22 @@ namespace ml {
 			"signature", signature);
 		}
 		printer->Indent();
-		printer->Print("type t\n");
-		printer->Print("val encode : t -> Word8Vector.vector\n");
-		printer->Print("val decode : ByteBuffer.buffer -> t * parseResult\n");
+		printer->Print("datatype t = ");
+		printer->Indent();
+		for (int i = 0; i < canonical_values_.size(); i++) {
+			// Capitalize each constructor.
+			string constructor = canonical_values_[i]->name();
+			CapitalizeString(constructor);
+
+			if (i > 0) printer->Print("\n| ");
+			printer->Print("$constructor$", 
+				"constructor", constructor);
+		}
+		printer->Print("\n");
+		printer->Outdent();
+		printer->Print("\n");
+		printer->Print("val encode : t -> Word8Vector.vector\n\n");
+		printer->Print("val decode : ByteBuffer.buffer -> t * parseResult\n\n");
 		printer->Outdent();
 		printer->Print("end\n");
 	}
