@@ -44,7 +44,11 @@ namespace protobuf {
 namespace compiler {
 namespace ml {
 	EnumGenerator::EnumGenerator(const EnumDescriptor* descriptor):descriptor_(
-		descriptor) {
+		descriptor), name_(descriptor_->name()) {
+		// Structure name is the capitalized descriptor name.
+		CapitalizeString(name_);
+
+		// Extract alias and canonical values.
 		for (int i = 0; i < descriptor_->value_count(); i++) {
 			const EnumValueDescriptor* value = descriptor_->value(i);
 			const EnumValueDescriptor* canonical_value = descriptor_->
@@ -75,25 +79,22 @@ namespace ml {
 		}
 		printer->Indent();
 		printer->Print("type t\n");
-		printer->Print("val encode : t * tag -> Word8Vector.vector\n");
-		printer->Print("val parse : ByteBuffer.buffer -> "
-			"(t * tag) * parseResult\n");
+		printer->Print("val encode : t -> Word8Vector.vector\n");
+		printer->Print("val decode : ByteBuffer.buffer -> t * parseResult\n");
 		printer->Outdent();
 		printer->Print("end\n");
 	}
 
 	void EnumGenerator::GenerateStructure(io::Printer* printer, bool toplevel) {
-		string structure = descriptor_->name();
-		CapitalizeString(structure);
 		if (toplevel) {
 			string signature = descriptor_->name();
 			UpperString(&signature);
-			printer->Print("structure $structure$ :> $signature$ = \n",
-				"structure", structure,
+			printer->Print("structure $name$ :> $signature$ = \n",
+				"name", name_,
 				"signature", signature);
 		} else {
-			printer->Print("structure $structure$ = \n",
-				"structure", structure);
+			printer->Print("structure $name$ = \n",
+				"name", name_);
 		}
 
 		printer->Print("struct\n");
@@ -113,11 +114,8 @@ namespace ml {
 		printer->Outdent();
 
 		// Encode function;
-		printer->Print("fun encode (e, tag) =\n");
+		printer->Print("fun encode e = encodeVarint (case e of ");
 		printer->Indent();
-		printer->Print("let\n");
-		printer->Indent();
-		printer->Print("val v = case (e) of ");
 		for (int i = 0; i < canonical_values_.size(); i++) {
 			// Capitalize each constructor.
 			string constructor = canonical_values_[i]->name();
@@ -126,27 +124,20 @@ namespace ml {
 			string tag = to_string(canonical_values_[i]->number());
 
 			if (i > 0) printer->Print("\n| ");
-			printer->Print("$constructor$ => encodeVarint $tag$", 
+			printer->Print("$constructor$ => $tag$", 
 				"constructor", constructor,
 				"tag", tag);
 		}
-		printer->Print("\n");
-		printer->Print("val key = encodeKey (tag, Code(0))\n");
 		printer->Outdent();
-		printer->Print("in\n");
-		printer->Indent();
-		printer->Print("Word8Vector.concat [key, v]\n");
-		printer->Outdent();
-		printer->Print("end\n");
-		printer->Outdent();
+		printer->Print("\n)\n");
 
 		// Decode function;
-		printer->Print("fun parse buff =\n");
+		printer->Print("fun decode buff =\n");
 		printer->Indent();
 		printer->Print("let\n");
 		printer->Indent();
-		printer->Print("val ((e, tag), buff) = parseEnum buff\n");
-		printer->Print("val enum_val = case (e) of ");
+		printer->Print("val (e, parse_result) = decodeVarint buff\n");
+		printer->Print("val v = case e of ");
 		for (int i = 0; i < canonical_values_.size(); i++) {
 			// Capitalize each constructor.
 			string constructor = canonical_values_[i]->name();
@@ -165,7 +156,7 @@ namespace ml {
 		printer->Outdent();
 		printer->Print("in\n");
 		printer->Indent();
-		printer->Print("((enum_val, tag), buff)\n");
+		printer->Print("(v, parse_result)\n");
 		printer->Outdent();
 		printer->Print("end\n");
 		printer->Outdent();
@@ -182,6 +173,17 @@ namespace ml {
 			"type_name", type_name,
 			"structure_name", structure_name);
 	}
+
+	/*
+	void EnumGenerator::GenerateBuilder(io::Printer* printer) {
+		printer->Print("structure Builder = \nstruct\n",
+				"structure", structure);
+		}
+		printer->Indent();
+		printer->Print("datatype t = ");
+		printer->Outdent();
+	}
+	*/
 }  // namespace ml
 }  // namespace compiler
 }  // namespace protobuf

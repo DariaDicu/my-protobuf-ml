@@ -72,7 +72,9 @@ end
 
 datatype parseResult = ParseResult of ByteBuffer.buffer*parsedByteCount
 
-fun parseVarint_core buff i prev_val (ParsedByteCount(s)) = 
+(* This returns the varint value, remaining buffer and #bytes parsed,
+but not the key. The key parsing is delegated to parent message. *)
+fun decodeVarint_core buff i prev_val (ParsedByteCount(s)) = 
 let 
 	val (b, next_buff) = ByteBuffer.nextByte buff
 	(* TODO - Treat overflow? *)
@@ -84,18 +86,18 @@ let
 in
 	if (msb = true) then 
 		(* if msb in this byte is 1, varint contains the next byte *)
-		parseVarint_core next_buff (i+1) next_val (ParsedByteCount(s+1))
+		decodeVarint_core next_buff (i+1) next_val (ParsedByteCount(s+1))
 	else
 		(* final value is tuple of value, remaining buffer and
 		number of bytes parsed *)
 		(next_val, ParseResult(next_buff, ParsedByteCount(s)))
 end
 
-fun parseVarint buff = parseVarint_core buff 0 0 (ParsedByteCount(0))
+fun decodeVarint buff = decodeVarint_core buff 0 0 (ParsedByteCount(0))
 
-fun parseKey buff = 
+fun decodeKey buff = 
 let
-	val (v, ParseResult(next_buff, parsedByteCount)) = parseVarint buff
+	val (v, ParseResult(next_buff, parsedByteCount)) = decodeVarint buff
 	(* Type of the key is represented by last 3 bits. *)
 	val code_ = Code(IntInf.andb(v, 7))
 	(* Field number is represented by the remaining bits. *)
@@ -104,7 +106,7 @@ in
 	((tag_, code_), ParseResult(next_buff, parsedByteCount))
 end
 
-fun parseFixed totalBytes i remaining buff prev_val = 
+fun decodeFixed totalBytes i remaining buff prev_val = 
 let
 	val (b, next_buff) = ByteBuffer.nextByte buff
 	val next_val = 
@@ -112,103 +114,29 @@ let
 			Word.fromInt(i * 7))
 in
 	if (i > 1) then
-		parseFixed totalBytes (i+1) (remaining-1) next_buff next_val
+		decodeFixed totalBytes (i+1) (remaining-1) next_buff next_val
 	else
 		(next_val, ParseResult(next_buff, ParsedByteCount(totalBytes)))
 end
 
-fun parse32 buff = parseFixed 4 0 4 buff 0
+fun decode32 buff = decodeFixed 4 0 4 buff 0
 
-fun parse64 buff = parseFixed 8 0 8 buff 0
+fun decode64 buff = decodeFixed 8 0 8 buff 0
 
 (* Tested against encodeString *)
-fun parseString buff = 
-let 
-	(*
-	val ((tag_, code_), ParseResult(buff, ParsedByteCount(keyBytes))) = 
-		parseKey buff
-	*)
+(* Modified, since we only parse body but not key. *)
+fun decodeString buff = 
+let
 	val (length, ParseResult(buff, ParsedByteCount(lenBytes))) =
-		parseVarint buff
+		decodeVarint buff
 	val (body, buff) = ByteBuffer.nextFixedBlock buff length
 	val string_value = Byte.bytesToString body
 in
-	(* should return tag too? *)
-	(string_value, ParseResult(buff, ParsedByteCount(keyBytes + lenBytes + length)))
+	(string_value, ParseResult(buff, ParsedByteCount(lenBytes + length)))
 end
 
-(*
-fun parseInt32 buff = 
-let
-	val ((tag_, code_), ParseResult(buff, ParsedByteCount(keyBytes))) = 
-		parseKey buff
-	val (v, ParseResult(next_buff, ParsedByteCount(valueBytes))) = 
-		parseVarint buff
-in	
-	if (code_ <> Code(0)) then
-		raise Exception(PARSE, "Attempting to parse wrong wire type.")
-	else
-		(* Return (tag, enum value) pair together with remaining buffer *)
-		((v, tag_), 
-			ParseResult(buff, ParsedByteCount(keyBytes + valueBytes)))
-end*)
-
-fun parseInt32 buff = parseVarint buff
-fun parseInt64 buff = parseVarint buff
-
-(*
-fun parse_message buff fields_function = 
-let
-	val (length, ParseResult(buff, ParsedByteCount(lenBytes))) =
-		parseVarint buff
-	val 
-in
-end
-*)
-
-(*
-fun parse_message_body buff = 
-let
-	val (length, buff) = parseVarint buff
-	val (message, buff) = ByteBuffer.nextFixedBlock buff length
-in
-	(message, buff)
-end
-
-
-fun parse_message buff expected_tag = 
-let
-	val ((tag_, code_), buff) = parseKey buff
-	val (length, buff) = parseVarint buff
-in
-	if (code_ <> Code(2)) then
-		raise Exception(PARSE, "Attempting to parse wrong wire type.")
-	else if (tag_ <> expected_tag) then
-		raise Exception(PARSE, "Parsed tag does not match expected tag.")
-	else
-		(* Returns resulting message, as well as remaining buffer. *)
-		parse_message_body buff
-end
-*)
-
-fun parseEnum buff = parseVarint buff
-
-(*
-fun parseEnum buff = 
-let
-	val ((tag_, code_), ParseResult(buff, ParsedByteCount(keyBytes))) = 
-		parseKey buff
-	val (enum_val, ParseResult(buff, ParsedByteCount(valueBytes))) = 
-		parseVarint buff 
-in
-	if (code_ <> Code(0)) then
-		raise Exception(PARSE, "Attempting to parse wrong wire type.")
-	else
-		(* Return (tag, enum value) pair together with remaining buffer*)
-		((enum_val, tag_), 
-			ParseResult(buff, ParsedByteCount(keyBytes + valueBytes)))
-end
-*)
+fun decodeInt32 buff = decodeVarint buff
+fun decodeInt64 buff = decodeVarint buff
 
 (*------------------------------------*)
 (* Encoding *)
@@ -269,66 +197,88 @@ in
 		encodeVarint key
 end
 
-(* Encodes a string with a specific tag by prefixing it with key 
-and length. *)
-fun encodeString (s, tag_) = 
+(* Encodes a string. *)
+fun encodeString s = 
 let
 	(* Wire type of string is 2 (length delimited). *)
-	val encoded_key = encodeKey (tag_, Code(2))
 	val encoded_length = encodeVarint (String.size s)
 	val encoded_body = Word8Vector.tabulate ((String.size s),
 		fn i => Byte.charToByte (String.sub (s, i))
 	)
 in
-	Word8Vector.concat [encoded_key, encoded_length, encoded_body]
+	Word8Vector.concat [encoded_length, encoded_body]
 end
 
 (* Encodes a byte array with a specific tag by prefixing it with
 key and length. *)
-fun encodeByteArray (bytes, tag_) = 
+fun encodeByteArray bytes = 
 let
-	(* Wire type of byte sequence is 2 (length delimited). *)
-	val encoded_key = encodeKey (tag_, Code(2))
 	val encoded_length = encodeVarint (Word8Vector.length bytes)
 in
-	Word8Vector.concat [encoded_key, encoded_length, bytes]
+	Word8Vector.concat [encoded_length, bytes]
 end
 
-(* Not really tested *)
-fun encodeRepeated f ([], tag_:tag) = (Word8Vector.fromList [])
-  | encodeRepeated f (x::xs, tag_:tag) = Word8Vector.concat 
-  	[(f (x, tag_)), (encodeRepeated f (xs, tag_))]
+(* Functions for encoding functions with different labels *)
+(* They compile, but not tested. *)
+fun encodeRequired encode_fun encoded_key x = 
+	Word8Vector.fromList [encoded_key, encode_fun x]
 
-fun encodeOptional f (NONE, tag_:tag) = (Word8Vector.fromList [])
-  | encodeOptional f (SOME(x), tag_:tag) = (f (x, tag_))
+fun encodeRepeated encode_fun encoded_key [] = Word8Vector.fromList []
+  | encodeRepeated encode_fun encoded_key (x::xs) = Word8Vector.concat 
+  	[encoded_key, encode_fun x, encodeRepeated encode_fun encoded_key xs]
+
+fun encodePacked_core encode_fun [] = Word8Vector.fromList []
+  | encodePacked_core encode_fun (x::xs) = Word8Vector.concat 
+  	[encode_fun x, encodePacked_core encode_fun xs]
+
+fun encodePackedRepeated encode_fun encoded_key l = 
+	Word8Vector.concat [encoded_key, encodePacked_core encode_fun l]
+
+fun encodeOptional encode_fun encoded_key NONE = Word8Vector.fromList []
+  | encodeOptional encode_fun encoded_key (SOME(x)) = 
+  Word8Vector.concat [encoded_key, encode_fun x]
+
+(* ===== end of label functions ==== *)
 
 (* Not really tested *)
-fun encodeMessage (body, tag_) = 
-let 
-	(* Code is 2, since type is message (fixed length) *)
-	val encoded_key = encodeKey (tag_, Code(2))
-	val length = Word8Vector.length body
+fun encodeMessage encoded_body = 
+let
+	val length = Word8Vector.length encoded_body
 	val encoded_length = encodeVarint length
 in
-	Word8Vector.concat [encoded_key, encoded_length, body]
+	Word8Vector.concat [encoded_length, encoded_body]
 end
 
-fun encodeInt32 (n, tag_) = 
-let 
-	val key = encodeKey (tag_, Code(0))
-	val v = encodeVarint n
+fun encodeInt32 n = encodeVarint n
+fun encodeInt64 n = encodeVarint n
+
+(* ====== Helper method for decoding ===== *)
+(* This method is a helper for smaller code size. *)
+(* decode_fun -> Function for decoding this field. *)
+(* modifier_fun -> Accessor method to call on object for adding the new field. *)
+(* rec_fun -> Function to call on the object to decode next field. *)
+(* obj -> Partially constructed object of type Builder. *)
+(* buff -> Input buffer. *)
+(* remaining -> Number of remaining bits in the message, as parsed from key. *)
+fun decodeNextHelper decode_fun modifier_fun rec_fun obj buff remaining = 
+  let
+    val (field_value, parse_result) = decode_fun buff
+    val ParseResult(buff, ParsedByteCount(parsed_bytes)) = parse_result
+    val obj = if (remaining > parsed_bytes) then modifier_fun (obj, field_value)
+		else raise Exception(PARSE, "Error in matching the message length with fields length.")
+  in
+      rec_fun buff obj (remaining - parsed_bytes)
+  end
+
+fun decodeFullHelper next_field_fun build_fun empty_obj buff =
+let
+	val (length, ParseResult(buff, ParsedByteCount(lenBytes))) =
+		decodeVarint buff
+	val (obj, buff) = next_field_fun buff empty_obj length
 in
-	Word8Vector.concat [key, v]
+	(build_fun obj, ParseResult(buff, ParsedByteCount(lenBytes+length)))
 end
 
-
-fun encodeInt64 (n, tag_) = 
-let 
-	val key = encodeKey (tag_, Code(0))
-	val v = encodeVarint n
-in
-	Word8Vector.concat [key, v]
-end
 
 (* TODO add fixed32, 64 etc *)
 

@@ -81,33 +81,9 @@ namespace ml {
 		}
 
 		printer->Print("type t\n");
-		printer->Print("val encode : t * tag -> Word8Vector.vector\n");
-		printer->Print("val parse : ByteBuffer.buffer -> "
-			"(t * tag) * parseResult\n");
-
-		// Print function declarations for setters
-		for (int i = 0; i < descriptor_->field_count(); i++) {
-			const FieldDescriptor* field = descriptor_->field(i);
-			string name = field->name();
-			SanitizeForMl(name);
-
-			string type = GetFormattedTypeFromField(field);
-			UncapitalizeString(type);
-
-			string label = LabelName(field->label());
-
-			printer->Print("val set_$name$: t * $type$ $label$ -> unit\n",
-				"name", name,
-				"type", type,
-				"label", label);
-
-			// If repeated field, then generate add functions.
-			if (label == "list") {
-				printer->Print("val add_$name$: t * $type$ -> unit\n",
-					"name", name,
-					"type", type);
-			}
-		}
+		GenerateBuilderSignature(printer);
+		printer->Print("val encode : t -> Word8Vector.vector\n");
+		printer->Print("val decode : ByteBuffer.buffer -> t * parseResult\n");
 
 		// End is the same regardless of toplevel being true/false.
 		printer->Outdent();
@@ -155,7 +131,7 @@ namespace ml {
 
 			// TODO: decide if default should be required.
 			string label = LabelName(field->label());
-			printer->Print("$name$: $type$ $label$ ref",
+			printer->Print("$name$: $type$ $label$",
 				"name", name,
 				"type", type,
 				"label", label);
@@ -169,42 +145,20 @@ namespace ml {
 		// TODO: Print alias for main type declaration.
 		printer->Print("}\n");
 
-		// Printing setters.
-		for (int i = 0; i < descriptor_->field_count(); i++) {
-			const FieldDescriptor* field = descriptor_->field(i);
-			string name = field->name();
-			SanitizeForMl(name);
-
-			string type = GetFormattedTypeFromField(field);
-			UncapitalizeString(type);
-
-			string label = LabelName(field->label());
-
-			printer->Print("fun set_$name$ (msg, value) = \n"
-				"(#$name$ msg) := value\n",
-				"name", name);
-
-			// If repeated field, then generate add functions.
-			if (label == "list") {
-				printer->Print("fun add_$name$ (msg, value) = \n"
-					"(#$name$ msg) := value :: !(#$name$ msg)\n",
-					"name", name);
-			}
-		}
-
+		GenerateBuilderStructure(printer);
 
 		// Printing the encode function.
-		printer->Print("fun encode (m, tag) = \n");
+		printer->Print("fun encode m = \n");
 		printer->Indent();
 		printer->Print("let\n");
 		printer->Indent();
-		printer->Print("val l = [");
 		for (int i = 0; i < descriptor_->field_count(); i++) {
 			const FieldDescriptor* field = descriptor_->field(i);
 			string name = field->name();
 			SanitizeForMl(name);
 			string type_name = field->type_name();
 			string tag = to_string(field->number());
+			string code = to_string(GetWireCode(field->type()));
 
 			// Get name of the helper function we need to call.
 			string function_name;
@@ -215,6 +169,19 @@ namespace ml {
 			bool is_optional = (field->label() == 
 				FieldDescriptor::LABEL_OPTIONAL);
 
+			bool is_required = (field->label() ==
+				FieldDescriptor::LABEL_REQUIRED);
+
+			// Default is optional.
+			if ((!is_required) && (!is_repeated)) is_optional = true;
+
+			// Default value for packed encoding is true, unless otherwise 
+			// specified.
+			bool is_packed = true;
+			if(field->options().has_packed() && !field->options().packed()) {
+				is_packed = false;
+			}
+
 			if (type_name.compare("message") == 0 || 
 				type_name.compare("enum") == 0) {
 				string type = GetFormattedTypeFromField(field);
@@ -224,54 +191,69 @@ namespace ml {
 				CapitalizeString(type_name);
 				function_name = "encode" + type_name;
 			}
-			if (i > 0) printer->Print(", \n");
+
+			// Get function for label.
+			string label_function = "encodeOptional";
 			if (is_repeated) {
-				printer->Print("(encodeRepeated $enc_func$) (!(#$name$ m), "
-					"Tag($tag$))",
-					"name", name,
-					"enc_func", function_name,
-					"tag", tag);
+				if (is_packed) {
+					label_function = "encodePackedRepeated";
+				} else {
+					label_function = "encodeRepeated";
+				}
 			} else if (is_optional) {
-				printer->Print("(encodeOptional $enc_func$) (!(#$name$ m), "
-					"Tag($tag$))",
-					"name", name,
-					"enc_func", function_name,
-					"tag", tag);
-			} else {
-				printer->Print("$enc_func$ (!(#$name$ m), Tag($tag$))", 
-					"name", name,
-					"enc_func", function_name,
-					"tag", tag);
+				label_function = "encodeOptional";
+			} else if (is_required) {
+				label_function = "encodeRequired";
 			}
+			printer->Print("val $name$ = ($label_function$ $enc_func$)"
+				" (encodeKey(Tag($tag$), Code($code$))) (#$name$ m)\n",
+				"name", name,
+				"code", code,
+				"enc_func", function_name,
+				"label_function", label_function,
+				"tag", tag);
 		}
-		printer->Print("]\n");
 		printer->Outdent();
 		printer->Print("in\n");
 		printer->Indent();
-		printer->Print("Word8Vector.concat l\n");
+		printer->Print("Word8Vector.concat [\n");
+		printer->Indent();
+		// Listing all encoded fields in the message.
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+
+			if (i > 0) printer->Print(",\n");
+			printer->Print("$name$", "name", name);
+		}
+		printer->Print("\n");
 		printer->Outdent();
-		printer->Print("end\n");
+		printer->Print("]\n");
+		printer->Outdent();
+		printer->Print("end\n\n");
 		printer->Outdent();
 
 		// Printing the decode next field function. This is hidden from signature.
-		printer->Print("fun parseNextField buff obj remaining = \n");
+		// ========== Start of decode next field ==========
+		printer->Print("fun decodeNextField buff obj remaining = \n");
 		printer->Indent();
-		printer->Print("if (remaining == 0) then\n");
+		printer->Print("if (remaining = 0) then\n");
 		printer->Indent();
 		//TODO: count total bytes read... 0 for now. 
-		printer->Print("(obj, ParseResult(buff, 0))\n");
+		printer->Print("(obj, buff)\n");
 		printer->Outdent();
-		printer->Print("elseif (remaining < 0) then\n");
+		printer->Print("else if (remaining < 0) then\n");
 		printer->Indent();
 		printer->Print("raise Exception(PARSE, \"Field encoding does not match "
-			"length in message header\")\n");
+			"length in message header.\")\n");
 		printer->Outdent();
 		printer->Print("else\n");
 		printer->Indent();
 		printer->Print("let\n");
 		printer->Indent();
 		printer->Print("val ((Tag(t), Code(c)), parse_result) = "
-			"parseKey buff\n");
+			"decodeKey buff\n");
 		printer->Print("val ParseResult(buff, ParsedByteCount(keyByteCount)) = "
 				"parse_result\n");
 		printer->Print("val remaining = remaining - keyByteCount\n");
@@ -280,26 +262,25 @@ namespace ml {
 		printer->Indent();
 		printer->Print("if (remaining <= 0) then\n");
 		printer->Indent();
-		printer->Print("raise Exception(PARSE, \"Not enough bytes in message "
-			"to parse the message fields.\")\n");
+		printer->Print("raise Exception(PARSE, \"Not enough bytes left after "
+			"parsing message field key.\")\n");
 		printer->Outdent();
 		printer->Print("else case (t) of ");
 		for (int i = 0; i < descriptor_->field_count(); i++) {
-			/*
-			ML code will look like:
-			case (tag_) of 0 => 
-			let
-				val (field_value, parsed_bytes) = parseFuncForType buff
-			in
-				if (remaining > parsed_bytes)
-					(ModuleName.setOrAddForLabel (obj, field_value),
-					parseNextField buff obj (remaining - parsed_bytes))
-				else 
-					raise Exception(PARSE, 
-						"Error in matching the message length with fields length.")
-			end
-			| 1 => ...
-			*/
+			// ML code will look like:
+			// fun decodeMessageHelper decode_fun modifier_fun rec_fun obj buff remaining = 
+			// case (tag_) of 0 => 
+			// let
+			// 	val (field_value, parsed_bytes) = parseFuncForType buff
+			// in
+			// 	if (remaining > parsed_bytes)
+			// 		(ModuleName.setOrAddForLabel (obj, field_value),
+			// 		parseNextField buff obj (remaining - parsed_bytes))
+			// 	else 
+			// 		raise Exception(PARSE, 
+			// 			"Error in matching the message length with fields length.")
+			// end
+			// | 1 => ...
 			const FieldDescriptor* field = descriptor_->field(i);
 			string name = field->name();
 			SanitizeForMl(name);
@@ -311,10 +292,10 @@ namespace ml {
 			string function_name;
 			if (type_name.compare("message") == 0 || 
 			  type_name.compare("enum") == 0) {
-				function_name = module_name + ".parse";
+				function_name = module_name + ".decode";
 			} else {
 				CapitalizeString(type_name);
-				function_name = "parse" + type_name;
+				function_name = "decode" + type_name;
 			}
 		
 			bool is_repeated = (field->label() == 
@@ -327,49 +308,31 @@ namespace ml {
 			string setter_name;
 
 			if (is_repeated) {
-				setter_name = "add_" + name;
+				setter_name = "Builder.add_" + name;
 			} else {
-				setter_name = "set_" + name;
+				setter_name = "Builder.set_" + name;
 			}
 
 			if (i > 0) printer->Print("\n| ");
-			printer->Print("$tag$ => \n", "tag", tag);
-			printer->Indent();
-			printer->Print("let\n");
-			printer->Indent();
-			printer->Print("val (field_value, parse_result) = "
-				"$function_name$ buff\n",
-				"function_name", function_name);
-			printer->Print("val ParseResult(buff, "
-				"ParsedByteCount(parsed_bytes)) = parse_result\n");
-			printer->Outdent();
-			printer->Print("in\n");
-			printer->Indent();
-			printer->Print("if (remaining > parsed_bytes) then\n");
-			printer->Indent();
-			/*$parent_name$.*/
-			printer->Print("($setter$ (obj, field_value);\n"
-				"parseNextField buff obj (remaining - parsed_bytes))\n",
-				"parent_name", structure,
-				"setter", setter_name);
-			printer->Outdent();
-			printer->Print("else\n");
-			printer->Indent();
-			printer->Print("raise Exception(PARSE, \"Error in matching the "
-				"message length with fields length.\")\n");
-			printer->Outdent();
-			printer->Outdent();
-			printer->Print("end");
-			printer->Outdent();
+			printer->Print("$tag$ => ", "tag", tag);
+			printer->Print("decodeNextHelper ($function_name$) "
+				"($setter_name$) (decodeNextField) obj buff remaining",
+				"function_name", function_name,
+				"setter_name", setter_name);
 		}
-		printer->Print("\n");
+		// Raise exception for unknown tag. TODO: skip based on wire type, length.
+		printer->Print("\n| n => raise Exception(PARSE, \"Unknown field tag\")\n");
+		printer->Outdent();
+		printer->Print("end\n\n");
 		printer->Outdent();
 		printer->Outdent();
-		printer->Print("end\n");
-		printer->Outdent();
+		// ========== End of decode next field ==========
 
+		// ========== Start of decode ==========
+		printer->Print("fun decode buff = decodeFullHelper decodeNextField "
+			"(Builder.build) (Builder.init ()) buff\n\n");
 
-
+		// ========== End of decode ==========
 		printer->Outdent();
 		printer->Print("end\n");
 
@@ -380,6 +343,218 @@ namespace ml {
 		printer->Print("type $type_name$ = $structure_name$.t\n",
 			"type_name", type_name,
 			"structure_name", structure_name);
+	}
+
+	void MessageGenerator::GenerateBuilderSignature(io::Printer* printer) {
+		printer->Print("structure Builder : sig\n");
+		printer->Indent();
+
+		printer->Print("type t\n");
+		printer->Print("type parentType\n");
+
+		// Print function declarations for setters
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+
+			string type = GetFormattedTypeFromField(field);
+			UncapitalizeString(type);
+
+			string label = LabelName(field->label());
+
+			// Print an empty line between methods for different fields.
+			printer->Print("\n");
+
+			// If repeated field, then generate add functions.
+			if (label == "list") {
+				printer->Print("val clear_$name$: t -> t\n",
+					"name", name);
+
+				printer->Print("val set_$name$: t * $type$ list -> t\n",
+					"name", name,
+					"type", type);
+
+				printer->Print("val add_$name$: t * $type$ -> t\n",
+					"name", name,
+					"type", type);
+			} else {
+				printer->Print("val clear_$name$: t -> t\n",
+					"name", name);
+
+				printer->Print("val set_$name$: t * $type$ -> t\n",
+					"name", name,
+					"type", type);
+			}
+		}
+		printer->Print("\n");
+		printer->Print("val init : unit -> t\n");
+
+		string parent = descriptor_->name();
+		CapitalizeString(parent);
+		printer->Print("\n");
+		printer->Print("val build : t -> parentType\n");
+
+		// End is the same regardless of toplevel being true/false.
+		printer->Outdent();
+		printer->Print("end where type parentType = t\n");
+	}
+
+	void MessageGenerator::GenerateBuilderStructure(io::Printer* printer) {
+		printer->Print("structure Builder = \nstruct\n");
+		printer->Indent();
+		printer->Print("type parentType = t\n");
+		printer->Print("type t = {\n");
+		printer->Indent();
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+
+			string type = GetFormattedTypeFromField(field);
+			UncapitalizeString(type);
+
+			string label = LabelName(field->label());
+
+			if (label == "list") {
+				printer->Print("$name$: $type$ list option ref",
+					"name", name,
+					"type", type);
+			} else {
+				printer->Print("$name$: $type$ option ref",
+					"name", name,
+					"type", type);
+			}
+			if (i < descriptor_->field_count() - 1) {
+				printer->Print(",\n");
+			} else {
+				printer->Print("\n");
+			}
+		}
+		printer->Outdent();
+		printer->Print("}\n");
+
+		/*
+		TODO: delete.
+		// Print type declaration for parent type.
+		string parent = descriptor_->name();
+		CapitalizeString(parent);
+		printer->Print("type parentType = $parent$.t\n",
+			"parent", parent);
+		*/
+
+		// Printing setters.
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+
+			string type = GetFormattedTypeFromField(field);
+			UncapitalizeString(type);
+
+			string label = LabelName(field->label());
+
+			// Print an empty line between methods for different fields.
+			printer->Print("\n");
+
+			printer->Print("fun clear_$name$ msg = \n"
+				"((#$name$ msg) := NONE; msg)\n",
+				"name", name);
+
+			printer->Print("fun set_$name$ (msg, v) = \n"
+				"((#$name$ msg) := SOME(v); msg)\n",
+				"name", name);
+
+			// If repeated field, then generate add functions.
+			if (label == "list") {
+				printer->Print("fun add_$name$ (msg, v) = \n",
+					"name", name);
+				printer->Indent();
+				printer->Print("((case (!(#$name$ msg)) of "
+					"NONE => (#$name$ msg) := SOME([v])\n"
+					"| SOME(l) => (#$name$ msg) := SOME(v :: l)); msg)\n",
+					"name", name);
+				printer->Outdent();
+			}
+		}
+
+		// Print initialization function.
+		printer->Print("\n");
+		printer->Print("fun init () = { ");
+		printer->Indent();
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+
+			printer->Print("$name$ = ref NONE",
+				"name", name);
+			if (i < descriptor_->field_count() - 1) {
+				printer->Print(",\n");
+			} else {
+				printer->Print("\n");
+			}
+		}
+		printer->Outdent();
+		printer->Print("}\n");
+
+		// Print build function.
+		printer->Print("\n");
+		printer->Print("fun build msg = \nlet\n");
+		printer->Indent();
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+
+			bool is_repeated = (field->label() == 
+				FieldDescriptor::LABEL_REPEATED);
+
+			bool is_optional = (field->label() == 
+				FieldDescriptor::LABEL_OPTIONAL);
+
+			bool is_required = (field->label() ==
+				FieldDescriptor::LABEL_REQUIRED);
+
+			// Default is optional.
+			if ((!is_required) && (!is_repeated)) is_optional = true;
+
+			// Need to throw error if required field is missing.
+			if (is_optional) {
+				printer->Print("val $name$Val = (!(#$name$ msg))\n",
+					"name", name);
+			} else if (is_repeated) {
+				printer->Print("val $name$Val = case (!(#$name$ msg)) of "
+					"NONE => [] | SOME(v) => v\n",
+					"name", name);
+			} else if (is_required) {
+				printer->Print("val $name$Val = case (!(#$name$ msg)) of "
+					"NONE => raise Exception(BUILD, "
+					"\"Required field missing.\") | SOME(v) => v\n",
+					"name", name);
+			}
+		}
+		printer->Outdent();
+		printer->Print("in { \n");
+		printer->Indent();
+		for (int i = 0; i < descriptor_->field_count(); i++) {
+			const FieldDescriptor* field = descriptor_->field(i);
+			string name = field->name();
+			SanitizeForMl(name);
+			printer->Print("$name$ = $name$Val",
+				"name", name);
+			// Print appropriate end of line.
+			if (i < descriptor_->field_count() - 1) {
+				printer->Print(",\n");
+			} else {
+				printer->Print("\n");
+			}
+		}
+		printer->Outdent();
+		printer->Print("}\n");
+		printer->Print("end\n");
+		printer->Outdent();
+		printer->Print("end\n");
 	}
 }  // namespace ml
 }  // namespace compiler

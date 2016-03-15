@@ -22,6 +22,8 @@ enum MlType {
 
 MlType GetMlType(const FieldDescriptor::Type type);
 
+int GetWireCode(const FieldDescriptor::Type type);
+
 void SanitizeForMl(string& name);
 
 string LabelName(const FieldDescriptor::Label label);

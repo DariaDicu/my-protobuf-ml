@@ -33,6 +33,7 @@ class EnumGenerator {
       const EnumValueDescriptor* canonical_value;
   };
   vector<Alias> aliases_;
+  string name_;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(EnumGenerator);
 };
