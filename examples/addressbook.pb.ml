@@ -8,7 +8,9 @@ sig
     | UNKNOWN
 
   val encode : t -> Word8Vector.vector
+
   val decode : ByteBuffer.buffer -> t * parseResult
+
 end
 structure PhoneType :> PHONETYPE = 
 struct
@@ -43,7 +45,9 @@ sig
       | WORK
 
     val encode : t -> Word8Vector.vector
+
     val decode : ByteBuffer.buffer -> t * parseResult
+
   end
   type phoneType
   structure PhoneNumber : sig
@@ -51,19 +55,17 @@ sig
     structure Builder : sig
       type t
       type parentType
-      type phoneType
 
       val clear_number: t -> t
       val set_number: t * string -> t
 
       val clear_type_: t -> t
-      val set_type_: t * phoneType -> t
+      val set_type_: t * PhoneType.t -> t
 
       val init : unit -> t
 
       val build : t -> parentType
     end where type parentType = t
-      and type phoneType = phoneType
     val encode : t -> Word8Vector.vector
     val decode : ByteBuffer.buffer -> t * parseResult
   end
@@ -83,9 +85,9 @@ sig
     val set_email: t * string -> t
 
     val clear_phones: t -> t
-    val set_phones: t * phoneNumber list -> t
-    val merge_phones: t * phoneNumber list -> t
-    val add_phones: t * phoneNumber -> t
+    val set_phones: t * PhoneNumber.t list -> t
+    val merge_phones: t * PhoneNumber.t list -> t
+    val add_phones: t * PhoneNumber.t -> t
 
     val clear_cnp: t -> t
     val set_cnp: t * int list -> t
@@ -132,7 +134,6 @@ struct
     structure Builder = 
     struct
       type parentType = t
-      type phoneType = phoneType
       type t = {
         number: string option ref,
         type_: phoneType option ref
@@ -326,9 +327,9 @@ sig
     type parentType
 
     val clear_people: t -> t
-    val set_people: t * person list -> t
-    val merge_people: t * person list -> t
-    val add_people: t * person -> t
+    val set_people: t * Person.t list -> t
+    val merge_people: t * Person.t list -> t
+    val add_people: t * Person.t -> t
 
     val init : unit -> t
 

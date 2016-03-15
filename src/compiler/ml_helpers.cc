@@ -73,12 +73,16 @@ int GetWireCode(const FieldDescriptor::Type type) {
     case FieldDescriptor::TYPE_SFIXED32:
     case FieldDescriptor::TYPE_FLOAT:
       return 5;
+
+    // TODOL Be careful and check return value.
+    case FieldDescriptor::TYPE_GROUP:
+      return -1;
     // No default because we want the compiler to complain if any new
     // types are added.
   }
 
   GOOGLE_LOG(FATAL) << "Can't get here.";
-  return NULL;
+  return -1;
 }
 
 void SanitizeForMl(string& name) {
@@ -143,6 +147,24 @@ string GetFormattedTypeFromField(const FieldDescriptor* field) {
   }
   if (field->type() == FieldDescriptor::TYPE_ENUM) {
     string name = field->enum_type()->name();
+    CapitalizeString(name);
+    return name.c_str();
+  }
+  GOOGLE_LOG(FATAL) << "Can't get here.";
+  return NULL;
+}
+
+string GetCanonicalTypeFromField(const FieldDescriptor* field) {
+  if (PrimitiveType(field->type())) {
+    return PrimitiveTypeName(field->type());
+  }
+  if (field->type() == FieldDescriptor::TYPE_MESSAGE) {
+    string name = field->message_type()->name() + ".t";
+    CapitalizeString(name);
+    return name;
+  }
+  if (field->type() == FieldDescriptor::TYPE_ENUM) {
+    string name = field->enum_type()->name() + ".t";
     CapitalizeString(name);
     return name.c_str();
   }

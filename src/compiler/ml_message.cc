@@ -374,8 +374,7 @@ namespace ml {
 			string name = field->name();
 			SanitizeForMl(name);
 
-			string type = GetFormattedTypeFromField(field);
-			UncapitalizeString(type);
+			string type = GetCanonicalTypeFromField(field);
 
 			string label = LabelName(field->label());
 

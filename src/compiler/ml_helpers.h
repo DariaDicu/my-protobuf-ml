@@ -38,6 +38,8 @@ void UncapitalizeString(string& input_string);
 
 string GetFormattedTypeFromField(const FieldDescriptor* field);
 
+string GetCanonicalTypeFromField(const FieldDescriptor* field);
+
 }  // namespace ml
 }  // namespace compiler
 }  // namespace protobuf
