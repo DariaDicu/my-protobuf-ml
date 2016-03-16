@@ -177,7 +177,7 @@ namespace ml {
 
 			// Default value for packed encoding is true, unless otherwise 
 			// specified. Only primitives can be packed.
-			bool is_packed = (code == "2") ? false : true;
+			bool is_packed = (code == "2" || !is_repeated) ? false : true;
 			if(field->options().has_packed() && !field->options().packed()) {
 				is_packed = false;
 			}

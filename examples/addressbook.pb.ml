@@ -166,7 +166,7 @@ struct
     fun encode m = 
       let
         val number = (encodeOptional encodeString) (encodeKey(Tag(1), Code(2))) (#number m)
-        val type_ = (encodeOptional PhoneType.encode) (encodeKey(Tag(2), Code(2))) (#type_ m)
+        val type_ = (encodeOptional PhoneType.encode) (encodeKey(Tag(2), Code(0))) (#type_ m)
       in
         Word8Vector.concat [
           number,
@@ -277,7 +277,7 @@ struct
   fun encode m = 
     let
       val name = (encodeOptional encodeString) (encodeKey(Tag(1), Code(2))) (#name m)
-      val id = (encodeOptional encodeInt32) (encodeKey(Tag(2), Code(2))) (#id m)
+      val id = (encodeOptional encodeInt32) (encodeKey(Tag(2), Code(0))) (#id m)
       val email = (encodeOptional encodeString) (encodeKey(Tag(3), Code(2))) (#email m)
       val phones = (encodeRepeated PhoneNumber.encode) (encodeKey(Tag(4), Code(2))) (#phones m)
       val cnp = (encodePackedRepeated encodeInt32) (encodeKey(Tag(5), Code(2))) (#cnp m)
