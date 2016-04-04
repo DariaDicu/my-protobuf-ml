@@ -79,7 +79,7 @@ sig
     val set_name: t * string -> t
 
     val clear_id: t -> t
-    val set_id: t * int -> t
+    val set_id: t * bool -> t
 
     val clear_email: t -> t
     val set_email: t * string -> t
@@ -198,7 +198,7 @@ struct
   type phoneNumber = PhoneNumber.t
   type t = {
     name: string option,
-    id: int option,
+    id: bool option,
     email: string option,
     phones: phoneNumber list,
     cnp: int list
@@ -208,7 +208,7 @@ struct
     type parentType = t
     type t = {
       name: string option ref,
-      id: int option ref,
+      id: bool option ref,
       email: string option ref,
       phones: phoneNumber list option ref,
       cnp: int list option ref
@@ -277,7 +277,7 @@ struct
   fun encode m = 
     let
       val name = (encodeOptional encodeString) (encodeKey(Tag(1), Code(2))) (#name m)
-      val id = (encodeOptional encodeInt32) (encodeKey(Tag(2), Code(0))) (#id m)
+      val id = (encodeOptional encodeBool) (encodeKey(Tag(2), Code(0))) (#id m)
       val email = (encodeOptional encodeString) (encodeKey(Tag(3), Code(2))) (#email m)
       val phones = (encodeRepeated PhoneNumber.encode) (encodeKey(Tag(4), Code(2))) (#phones m)
       val cnp = (encodePackedRepeated encodeInt32) (encodeKey(Tag(5), Code(2))) (#cnp m)
@@ -305,7 +305,7 @@ struct
         if (remaining <= 0) then
           raise Exception(PARSE, "Not enough bytes left after parsing message field key.")
         else case (t) of 1 => decodeNextUnpacked (decodeString) (Builder.set_name) (decodeNextField) obj buff remaining
-        | 2 => decodeNextUnpacked (decodeInt32) (Builder.set_id) (decodeNextField) obj buff remaining
+        | 2 => decodeNextUnpacked (decodeBool) (Builder.set_id) (decodeNextField) obj buff remaining
         | 3 => decodeNextUnpacked (decodeString) (Builder.set_email) (decodeNextField) obj buff remaining
         | 4 => decodeNextUnpacked (PhoneNumber.decode) (Builder.add_phones) (decodeNextField) obj buff remaining
         | 5 => if (c = 2) then (decodeNextPacked (decodeInt32) (Builder.add_cnp) (decodeNextField) obj buff remaining)

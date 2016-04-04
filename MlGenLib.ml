@@ -95,6 +95,14 @@ end
 
 fun decodeVarint buff = decodeVarint_core buff 0 0 (ParsedByteCount(0))
 
+fun decodeZigZag buff = 
+let
+	val (v, parse_result) = decodeVarint buff
+	val signed_val = if (v mod 2 = 0) then (v div 2) else ((~1)*((v+1) div 2))
+in
+	(signed_val, parse_result)
+end
+
 fun decodeKey buff = 
 let
 	val (v, ParseResult(next_buff, parsedByteCount)) = decodeVarint buff
@@ -119,9 +127,13 @@ in
 		(next_val, ParseResult(next_buff, ParsedByteCount(totalBytes)))
 end
 
-fun decode32 buff = decodeFixed 4 0 4 buff 0
+fun decodeFixed32 buff = decodeFixed 4 0 4 buff 0
 
-fun decode64 buff = decodeFixed 8 0 8 buff 0
+fun decodeFixed64 buff = decodeFixed 8 0 8 buff 0
+
+fun decodeSfixed32 buff = decodeFixed32 buff
+
+fun decodeSfixed64 buff = decodeFixed64 buff
 
 (* Tested against encodeString *)
 (* Modified, since we only parse body but not key. *)
@@ -137,6 +149,11 @@ end
 
 fun decodeInt32 buff = decodeVarint buff
 fun decodeInt64 buff = decodeVarint buff
+fun decodeUint32 buff = decodeVarint buff
+fun decodeUint64 buff = decodeVarint buff
+fun decodeSint32 buff = decodeZigZag buff
+fun decodeSint64 buff = decodeZigZag buff
+fun decodeBool buff = decodeBool buff
 
 (*------------------------------------*)
 (* Encoding *)
@@ -165,8 +182,19 @@ end
 fun encodeVarint value = Word8Vector.fromList
 	(encodeVarint_core [] value)
 
+(* Returns a Word8Vector *)
+fun encodeZigZag value = 
+let
+
+	val abs_val = if (value < 0) then ~value else value
+	(* -1 if negative, 0 if positive *)
+	val add_on = if (value < 0) then ~1 else 0
+in
+	encodeVarint (abs_val*2 + add_on)
+end
+
 (* Returns a Word8Vector of size 4. *)
-fun encode32 number =
+fun encodeFixed32 number =
 let 
 	val vect = Word8Vector.tabulate (4, fn i =>
 		Word8.fromInt(IntInf.andb(
@@ -176,8 +204,10 @@ in
 	vect
 end
 
+fun encodeSfixed32 number = encodeFixed32 number
+
 (* Returns a Word8Vector of size 8. *)
-fun encode64 number =
+fun encodeFixed64 number =
 let 
 	val vect = Word8Vector.tabulate (8, fn i =>
 		Word8.fromInt(IntInf.andb((IntInf.~>>(number, Word.fromInt (i*8))), 255))
@@ -185,6 +215,8 @@ let
 in
 	vect
 end
+
+fun encodeSfixed64 number = encodeFixed64 number
 
 (* Encodes the (tag, code) pair into a varint representing the key. *)
 fun encodeKey (Tag(t), Code(c)) = 
@@ -256,6 +288,11 @@ end
 
 fun encodeInt32 n = encodeVarint n
 fun encodeInt64 n = encodeVarint n
+fun encodeUint32 n = encodeVarint n
+fun encodeUint64 n = encodeVarint n
+fun encodeSint32 n = encodeZigZag n
+fun encodeSint64 n = encodeZigZag n
+fun encodeBool n = encodeVarint n
 
 (* ====== Helper method for decoding ===== *)
 (* This method is a helper for smaller code size. *)
