@@ -15,7 +15,7 @@ type key = int * int
 datatype tag = Tag of int
 datatype code = Code of int
 datatype parsedByteCount = ParsedByteCount of int
-datatype errorCode = PARSE | ENCODE;
+datatype errorCode = PARSE | ENCODE | DECODE;
 exception Exception of errorCode*string
 
 signature ML_GEN_BYTE = 
@@ -147,45 +147,58 @@ in
 	(string_value, ParseResult(buff, ParsedByteCount(lenBytes + length)))
 end
 
+(* Decode function returns an unsigned int on 64 bits. *)
+(* PolyML does not provide 32-bit int. If type is int32/sint32/uint32, leaving
+it on 64-bits is not a problem for the user (semantics preserved). *)
+(* However, for signed types, we must convert to a signed integer. *)
+(* TODO *)
 fun decodeInt32 buff = decodeVarint buff
 fun decodeInt64 buff = decodeVarint buff
 fun decodeUint32 buff = decodeVarint buff
 fun decodeUint64 buff = decodeVarint buff
 fun decodeSint32 buff = decodeZigZag buff
 fun decodeSint64 buff = decodeZigZag buff
-fun decodeBool buff = decodeBool buff
+fun decodeBool buff = 
+let
+	val (v, parse_result) = decodeVarint buff
+in
+	if (v = 0) then (false, parse_result)
+	else if (v = 1) then (true, parse_result)
+	else raise Exception(DECODE, "Attempting to decode boolean of invalid value (not 0 or 1).") 
+end
 
 (*------------------------------------*)
 (* Encoding *)
 
-(* Creates a Word8 list. The wrapper function uses this to 
-create a Word8Vector. *)
-fun encodeVarint_core byte_list remaining_int = 
-let
-	(* Binary-and to get least significant 7 bits *)
-	val last7bits = IntInf.andb(remaining_int, 127)
-	val remaining_int = IntInf.~>>(remaining_int, Word.fromInt 7)
-	val msb = if (remaining_int > 0) then 1 else 0
-	(* The new byte we add to the list *)
-	val first_byte = if (msb = 1) then Word8.fromInt (IntInf.orb(last7bits, 128)) else Word8.fromInt last7bits
+(* *)
+
+(* Encodes a single Word.word as a varint. *)
+(* Least significant BYTES first, but within byte it's big endian. *)
+fun encodeVarint n = 
+let 
+	fun encodeVarint_core v =
+	let
+		(* We want last 7 of the 8 LSB in val, and put a 1 bit at the beginning.*)
+		fun toWord8 x = Word8.fromInt (LargeWord.toInt x)
+		val last7 = LargeWord.andb (v, 0wx7F)
+		val new_v = LargeWord.>>(v, 0wx7)
+		(* If this is last byte, then MSB has to be 0.*)
+		val last7 = if (new_v = 0wx0) then last7
+			else LargeWord.orb(last7, 0wx80)
+	in
+		if (new_v <> 0wx0) then 
+			(toWord8 last7)::(encodeVarint_core new_v)
+		else
+			(* Stop iteration and return single element list *)
+			[toWord8 last7]
+	end
 in
-	if (msb = 1) then
-		(* Making first bit of byte 1 and appending to list *)
-		encodeVarint_core (first_byte::byte_list) remaining_int
-	else
-		(* Resulting list is in reverse order, so must reverse it. *)
-		rev (first_byte::byte_list)
+	Word8Vector.fromList (encodeVarint_core (LargeWord.fromInt n))
 end
-
-
-(* Returns a Word8Vector (be careful, not a buffer.) *)
-fun encodeVarint value = Word8Vector.fromList
-	(encodeVarint_core [] value)
 
 (* Returns a Word8Vector *)
 fun encodeZigZag value = 
 let
-
 	val abs_val = if (value < 0) then ~value else value
 	(* -1 if negative, 0 if positive *)
 	val add_on = if (value < 0) then ~1 else 0
@@ -198,7 +211,7 @@ fun encodeFixed32 number =
 let 
 	val vect = Word8Vector.tabulate (4, fn i =>
 		Word8.fromInt(IntInf.andb(
-			(IntInf.~>>(number, Word.fromInt (i*8))), 255))
+			(IntInf.~>>(number, Word.fromInt ((3-i)*8))), 255))
 	)
 in
 	vect
@@ -210,7 +223,7 @@ fun encodeSfixed32 number = encodeFixed32 number
 fun encodeFixed64 number =
 let 
 	val vect = Word8Vector.tabulate (8, fn i =>
-		Word8.fromInt(IntInf.andb((IntInf.~>>(number, Word.fromInt (i*8))), 255))
+		Word8.fromInt(IntInf.andb((IntInf.~>>(number, Word.fromInt ((7-i)*8))), 255))
 	)
 in
 	vect
@@ -286,13 +299,50 @@ in
 	Word8Vector.concat [encoded_length, encoded_body]
 end
 
-fun encodeInt32 n = encodeVarint n
+(* Use plain varint encoding *)
+(* This is always a signed integer. Check if bits 32-63 are all 0 or all 1,
+otherwise int32 overflows, so return error. *)
+fun encodeInt32 n = 
+let
+	val first32 = LargeWord.andb (LargeWord.fromInt n, 0wxFFFFFFFF00000000)
+in
+	if (first32 <> 0wxFFFFFFFF00000000 andalso first32 <> 0wx0000000000000000) then
+		raise Exception(ENCODE, "Error. Attempting to encode a 64-bit value as a 32-bit integer.")
+	else
+		encodeVarint n
+end
+
 fun encodeInt64 n = encodeVarint n
-fun encodeUint32 n = encodeVarint n
+
+
+(* Check if bits 32-63 are all 0, otherwise uint32 overflows, so return error. *)
+fun encodeUint32 n = 
+let
+	val first32 = LargeWord.andb (LargeWord.fromInt n, 0wxFFFFFFFF00000000)
+in
+	if (first32 <> 0wx0000000000000000) then
+		raise Exception(ENCODE, "Error. Attempting to encode a 64-bit value as a 32-bit integer.")
+	else
+		encodeVarint n
+end
+
 fun encodeUint64 n = encodeVarint n
-fun encodeSint32 n = encodeZigZag n
+
+fun encodeBool b = 
+	if (b = true) then encodeVarint 1 else encodeVarint 0
+
+(* Use zig zag encoding *)
+fun encodeSint32 n = 
+let
+	val first32 = LargeWord.andb (LargeWord.fromInt n, 0wxFFFFFFFF00000000)
+in
+	if (first32 <> 0wxFFFFFFFF00000000 andalso first32 <> 0wx0000000000000000) then
+		raise Exception(ENCODE, "Error. Attempting to encode a 64-bit value as a 32-bit integer.")
+	else
+		encodeZigZag n
+end
+
 fun encodeSint64 n = encodeZigZag n
-fun encodeBool n = encodeVarint n
 
 (* ====== Helper method for decoding ===== *)
 (* This method is a helper for smaller code size. *)
@@ -349,7 +399,3 @@ let
 in 
 	rec_fun buff obj (remaining - parsed_bytes)
 end
-
-
-
-
