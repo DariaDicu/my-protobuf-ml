@@ -214,28 +214,32 @@ in
 	encodeVarint (abs_val*2 + add_on)
 end
 
-(* Returns a Word8Vector of size 4. *)
-fun encodeFixed32 number =
-let 
+
+fun encodeFixed32Word w =
+let
 	val vect = Word8Vector.tabulate (4, fn i =>
-		Word8.fromInt(IntInf.andb(
-			(IntInf.~>>(number, Word.fromInt (i*8))), 255))
-	)
+		Word8.fromInt(LargeWord.toInt(LargeWord.andb(LargeWord.>>(
+			w, Word.fromInt(i*8)), 0wxFF))))
 in
 	vect
 end
 
-fun encodeSfixed32 number = encodeFixed32 number
+fun encodeFixed64Word w =
+let
+	val vect = Word8Vector.tabulate (8, fn i =>
+		Word8.fromInt(LargeWord.toInt(LargeWord.andb(LargeWord.>>(
+			w, Word.fromInt(i*8)), 0wxFF))))
+in
+	vect
+end
+
+(* Returns a Word8Vector of size 4. *)
+fun encodeFixed32 number = encodeFixed32Word (LargeWord.fromInt number)
 
 (* Returns a Word8Vector of size 8. *)
-fun encodeFixed64 number =
-let 
-	val vect = Word8Vector.tabulate (8, fn i =>
-		Word8.fromInt(IntInf.andb((IntInf.~>>(number, Word.fromInt (i*8))), 255))
-	)
-in
-	vect
-end
+fun encodeFixed64 number = encodeFixed64Word (LargeWord.fromInt number)
+
+fun encodeSfixed32 number = encodeFixed32 number
 
 fun encodeSfixed64 number = encodeFixed64 number
 
