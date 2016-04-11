@@ -11,10 +11,10 @@
 (* Buffer is a vector and an index in the vector*)
 (* For now only considering integers, no floats or zigzags *)
 type byte = Word8.word
-type key = int * int
-datatype tag = Tag of int
-datatype code = Code of int
-datatype parsedByteCount = ParsedByteCount of int
+type key = Int32.int * Int32.int
+datatype tag = Tag of Int32.int
+datatype code = Code of Int32.int
+datatype parsedByteCount = ParsedByteCount of Int32.int
 datatype errorCode = PARSE | ENCODE | DECODE;
 exception Exception of errorCode*string
 
@@ -70,18 +70,30 @@ struct
 		end
 end
 
+(* Convert word 64 to int64 *)
+fun largeWordToInt64 v = Int64.fromLarge (Word64.toLargeInt v)
+(* Convert word 64 to int32 *)
+fun largeWordToInt32 v = Int32.fromLarge (Word64.toLargeInt v)
+(* Convert word 64 to int64 *)
+fun largeWordToSint64 v = Int64.fromLarge (Word64.toLargeIntX v)
+(* Convert word 64 to int32 *)
+fun largeWordToSint32 v = Int32.fromLarge (Word64.toLargeIntX v)
+(* Convert word8 ot word64 *)
+fun word8ToWord64 b = Word64.fromInt ((MlGenByte.toInt (MlGenByte.getTail b)))
+
 datatype parseResult = ParseResult of ByteBuffer.buffer*parsedByteCount
 
 (* This returns the varint value, remaining buffer and #bytes parsed,
 but not the key. The key parsing is delegated to parent message. *)
+(* Value decoded is a LargeWord.word (unsigned int of 64 bit) *)
 fun decodeVarint_core buff i prev_val (ParsedByteCount(s)) = 
 let 
 	val (b, next_buff) = ByteBuffer.nextByte buff
 	(* TODO - Treat overflow? *)
 	(* little endian *)
+	val new_byte = word8ToWord64 b
 	val next_val = 
-		prev_val + IntInf.<<((MlGenByte.toInt (MlGenByte.getTail b)), 
-			Word.fromInt(i * 7))
+		prev_val + Word64.<<(new_byte, Word.fromInt(i * 7))
 	val msb = MlGenByte.getMsb b
 in
 	if (msb = true) then 
@@ -93,11 +105,21 @@ in
 		(next_val, ParseResult(next_buff, ParsedByteCount(s)))
 end
 
-fun decodeVarint buff = decodeVarint_core buff 0 0 (ParsedByteCount(0))
+fun decodeVarint buff = decodeVarint_core buff 0 0wx0 (ParsedByteCount(0))
 
-fun decodeZigZag buff = 
+fun decodeZigZag32 buff = 
 let
 	val (v, parse_result) = decodeVarint buff
+	val v = largeWordToInt32 v
+	val signed_val = if (v mod 2 = 0) then (v div 2) else ((~1)*((v+1) div 2))
+in
+	(signed_val, parse_result)
+end
+
+fun decodeZigZag64 buff = 
+let
+	val (v, parse_result) = decodeVarint buff
+	val v = largeWordToInt64 v
 	val signed_val = if (v mod 2 = 0) then (v div 2) else ((~1)*((v+1) div 2))
 in
 	(signed_val, parse_result)
@@ -107,9 +129,10 @@ fun decodeKey buff =
 let
 	val (v, ParseResult(next_buff, parsedByteCount)) = decodeVarint buff
 	(* Type of the key is represented by last 3 bits. *)
-	val code_ = Code(IntInf.andb(v, 7))
+	val code_ = Code(largeWordToInt32 (Word64.andb(v, 0wx7)))
 	(* Field number is represented by the remaining bits. *)
-	val tag_ = Tag(IntInf.~>>(v, Word.fromInt 3))
+	(* Can represent as int32, since max allowed tag is 2^29 - 1. *)
+	val tag_ = Tag(largeWordToInt32 (Word64.>>(v, 0wx3)))
 in
 	((tag_, code_), ParseResult(next_buff, parsedByteCount))
 end
@@ -117,9 +140,9 @@ end
 fun decodeFixed totalBytes i remaining buff prev_val = 
 let
 	val (b, next_buff) = ByteBuffer.nextByte buff
+	val new_byte = word8ToWord64 b
 	val next_val = 
-		prev_val + IntInf.<<((MlGenByte.toInt (MlGenByte.getTail b)), 
-			Word.fromInt(i * 7))
+		prev_val + Word64.<<(new_byte, Word.fromInt(i * 7))
 in
 	if (i > 1) then
 		decodeFixed totalBytes (i+1) (remaining-1) next_buff next_val
@@ -127,13 +150,13 @@ in
 		(next_val, ParseResult(next_buff, ParsedByteCount(totalBytes)))
 end
 
-fun decodeFixed32 buff = decodeFixed 4 0 4 buff 0
+fun decodeFixed32 buff = decodeFixed 4 0 4 buff 0wx0
 
-fun decodeFixed64 buff = decodeFixed 8 0 8 buff 0
+fun decodeFixed64 buff = decodeFixed 8 0 8 buff 0wx0
 
-fun decodeSfixed32 buff = decodeFixed32 buff
+fun decodeSfixed32 buff = largeWordToSint32 (decodeFixed32 buff)
 
-fun decodeSfixed64 buff = decodeFixed64 buff
+fun decodeSfixed64 buff = largeWordToSint64 (decodeFixed64 buff)
 
 (* Tested against encodeString *)
 (* Modified, since we only parse body but not key. *)
@@ -219,7 +242,7 @@ fun encodeFixed32 number =
 let 
 	val vect = Word8Vector.tabulate (4, fn i =>
 		Word8.fromInt(IntInf.andb(
-			(IntInf.~>>(number, Word.fromInt (i*8))), 255))
+			(IntInf.~>>(number, Word.fromInt ((3-i)*8))), 255))
 	)
 in
 	vect
@@ -231,7 +254,7 @@ fun encodeSfixed32 number = encodeFixed32 number
 fun encodeFixed64 number =
 let 
 	val vect = Word8Vector.tabulate (8, fn i =>
-		Word8.fromInt(IntInf.andb((IntInf.~>>(number, Word.fromInt (i*8))), 255))
+		Word8.fromInt(IntInf.andb((IntInf.~>>(number, Word.fromInt ((7-i)*8))), 255))
 	)
 in
 	vect
