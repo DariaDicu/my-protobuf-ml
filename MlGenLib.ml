@@ -10,6 +10,8 @@
 (* For now, this is just a Word8Vector, it does not have a channel underneath*)
 (* Buffer is a vector and an index in the vector*)
 (* For now only considering integers, no floats or zigzags *)
+use "realConverters.ml";
+
 type byte = Word8.word
 type key = int * int
 datatype tag = Tag of int
@@ -114,26 +116,52 @@ in
 	((tag_, code_), ParseResult(next_buff, parsedByteCount))
 end
 
-fun decodeFixed totalBytes i remaining buff prev_val = 
+fun decodeFixedWord totalBytes i remaining buff prev_val =
 let
 	val (b, next_buff) = ByteBuffer.nextByte buff
+	val new_byte = LargeWord.fromInt (Word8.toInt b)
 	val next_val = 
-		prev_val + IntInf.<<((MlGenByte.toInt (MlGenByte.getTail b)), 
-			Word.fromInt(i * 7))
+		prev_val + LargeWord.<<(new_byte, Word.fromInt(i * 8))
 in
-	if (i > 1) then
-		decodeFixed totalBytes (i+1) (remaining-1) next_buff next_val
+	if (i < totalBytes-1) then
+		decodeFixedWord totalBytes (i+1) (remaining-1) next_buff next_val
 	else
 		(next_val, ParseResult(next_buff, ParsedByteCount(totalBytes)))
 end
 
-fun decodeFixed32 buff = decodeFixed 4 0 4 buff 0
+fun decodeFixed32Word buff = decodeFixedWord 4 0 4 buff 0wx0
 
-fun decodeFixed64 buff = decodeFixed 8 0 8 buff 0
+fun decodeFixed64Word buff = decodeFixedWord 8 0 8 buff 0wx0
 
-fun decodeSfixed32 buff = decodeFixed32 buff
+fun decodeSfixed32 buff = 
+let
+	val (w, parse_result) = decodeFixed32Word buff
+in
+	(LargeWord.toIntX w, parse_result)
+end
 
-fun decodeSfixed64 buff = decodeFixed64 buff
+fun decodeSfixed64 buff = 
+let
+	val (w, parse_result) = decodeFixed64Word buff
+in
+	(LargeWord.toIntX w, parse_result)
+end
+
+fun decodeDouble buff = 
+let
+	val (w, parse_result) = decodeFixed64Word buff
+	val v = LargeWord.toInt w
+in
+	(real_of_bits64 v, parse_result)
+end
+
+fun decodeFloat buff = 
+let
+	val (w, parse_result) = decodeFixed32Word buff
+	val v = LargeWord.toInt w
+in
+	(real_of_bits32 v, parse_result)
+end
 
 (* Tested against encodeString *)
 (* Modified, since we only parse body but not key. *)
@@ -232,6 +260,10 @@ let
 in
 	vect
 end
+
+fun encodeDouble d = encodeFixed64Word (LargeWord.fromInt (bits64_of_real d))
+
+fun encodeFloat f = encodeFixed32Word (LargeWord.fromInt (bits32_of_real f))
 
 (* Returns a Word8Vector of size 4. *)
 fun encodeFixed32 number = encodeFixed32Word (LargeWord.fromInt number)
