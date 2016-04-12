@@ -30,10 +30,31 @@ fun test_serialization_bools (enc_func, dec_func) b =
 		; dec = b)
 	end
 
+(*Tests if encode-decode match for a given tuple of encode, decode functions.*)
+fun test_serialization_strings(enc_func, dec_func) s = 
+	let val enc = enc_func s
+		val istream = ByteInputStream.fromVector enc
+		val (dec, parse_result) = dec_func istream
+	in
+	    (print ("Expected \"" ^ s ^ "\", decoded \"" ^ dec ^ "\"\n")
+		; dec = s)
+	end
+
+(*Tests if encode-decode match for a given tuple of encode, decode functions.*)
+fun test_serialization_bytes(enc_func, dec_func) bytes = 
+	let val enc = enc_func bytes
+		val istream = ByteInputStream.fromVector enc
+		val (dec, parse_result) = dec_func istream
+	in
+	    (if (dec = bytes) then print ("Bytes encoded successfully\n")
+						  else print ("Bytes encoding failed.\n")
+		; dec = bytes)
+	end
+
 (*Tests that running encode-decode raises an exception.*)
 fun test_serialization_expect_exception (enc_func, dec_func) v =
-	(dec_func (ByteInputStream.fromVector (enc_func v)); print ("No exception raised.\n"); false)
-		handle e' => (print ("Expected exception was raised.\n"); true)
+	(dec_func (ByteInputStream.fromVector (enc_func v)); print ("Failed - no exception raised.\n"); false)
+		handle e' => (print ("Expected exception was successfully raised.\n"); true)
 		(*(print ("Expected exception " ^ e ^ ". " ^ (#1 e') ^ " was raised.");
 			e = (#1 e'))*)
 
@@ -104,10 +125,18 @@ fun test 0 = test_serialization (encodeInt32, decodeInt32) 332323
   | test 54 = test_serialization_bools (encodeBool, decodeBool) true
   | test 55 = test_serialization_bools (encodeBool, decodeBool) false
 
-  | test 56 = test_serialization_expect_exception (encodeUint32, decodeUint32) 1239239233232932
+  | test 56 = test_serialization_strings (encodeString, decodeString) ""
+  | test 57 = test_serialization_strings (encodeString, decodeString) "here"
+  | test 58 = test_serialization_strings (encodeString, decodeString) "Here is some longer and more complex string to encode."
+
+  | test 59 = test_serialization_bytes (encodeBytes, decodeBytes) (Word8Vector.fromList [])
+  | test 60 = test_serialization_bytes (encodeBytes, decodeBytes) (Word8Vector.fromList [0wx1,0wx2])
+  | test 61 = test_serialization_bytes (encodeBytes, decodeBytes) (Word8Vector.fromList [0wx21,0wx2,0wx32,0wxFF,0wx0,0wxFA])
+
+  | test 62 = test_serialization_expect_exception (encodeUint32, decodeUint32) 1239239233232932
   | test n = raise invalidTest
 
-val lastTest = 56;
+val lastTest = 62;
 (* use "primitive_test.ml"; runTests(); *)
 fun runTests () = 
 let

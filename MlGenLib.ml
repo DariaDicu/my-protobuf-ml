@@ -95,7 +95,7 @@ in
 		(next_val, ParseResult(next_buff, ParsedByteCount(s)))
 end
 
-fun decodeVarint buff = decodeVarint_core buff 0 0 (ParsedByteCount(0))
+fun decodeVarint buff = decodeVarint_core buff 0 0 (ParsedByteCount(1))
 
 fun decodeZigZag buff = 
 let
@@ -171,8 +171,6 @@ in
 	(real_of_bits32 v, parse_result)
 end
 
-(* Tested against encodeString *)
-(* Modified, since we only parse body but not key. *)
 fun decodeString buff = 
 let
 	val (length, ParseResult(buff, ParsedByteCount(lenBytes))) =
@@ -181,6 +179,15 @@ let
 	val string_value = Byte.bytesToString body
 in
 	(string_value, ParseResult(buff, ParsedByteCount(lenBytes + length)))
+end
+
+fun decodeBytes buff = 
+let
+	val (length, ParseResult(buff, ParsedByteCount(lenBytes))) =
+		decodeVarint buff
+	val (body, buff) = ByteInputStream.nextFixedBlock buff length
+in
+	(body, ParseResult(buff, ParsedByteCount(lenBytes + length)))
 end
 
 (* Converts a parse result containing an integer (of maximum 64-bit) to a signed integer. *)
@@ -308,7 +315,7 @@ end
 
 (* Encodes a byte array with a specific tag by prefixing it with
 key and length. *)
-fun encodeByteArray bytes = 
+fun encodeBytes bytes = 
 let
 	val encoded_length = encodeVarint (Word8Vector.length bytes)
 in

@@ -94,6 +94,9 @@ sig
     val merge_cnp: t * int list -> t
     val add_cnp: t * int -> t
 
+    val clear_personal_number: t -> t
+    val set_personal_number: t * string -> t
+
     val init : unit -> t
 
     val build : t -> parentType
@@ -201,7 +204,8 @@ struct
     id: bool option,
     email: string option,
     phones: phoneNumber list,
-    cnp: int list
+    cnp: int list,
+    personal_number: string option
   }
   structure Builder = 
   struct
@@ -211,7 +215,8 @@ struct
       id: bool option ref,
       email: string option ref,
       phones: phoneNumber list option ref,
-      cnp: int list option ref
+      cnp: int list option ref,
+      personal_number: string option ref
     }
 
     fun clear_name msg = 
@@ -251,11 +256,17 @@ struct
       ((case (!(#cnp msg)) of NONE => (#cnp msg) := SOME(l)
       | SOME(ll) => (#cnp msg) := SOME(List.concat [ll, l])); msg)
 
+    fun clear_personal_number msg = 
+    ((#personal_number msg) := NONE; msg)
+    fun set_personal_number (msg, l) = 
+    ((#personal_number msg) := SOME(l); msg)
+
     fun init () = { name = ref NONE,
       id = ref NONE,
       email = ref NONE,
       phones = ref NONE,
-      cnp = ref NONE
+      cnp = ref NONE,
+      personal_number = ref NONE
     }
 
     fun build msg = 
@@ -265,12 +276,14 @@ struct
       val emailVal = (!(#email msg))
       val phonesVal = case (!(#phones msg)) of NONE => [] | SOME(v) => v
       val cnpVal = case (!(#cnp msg)) of NONE => [] | SOME(v) => v
+      val personal_numberVal = (!(#personal_number msg))
     in { 
       name = nameVal,
       id = idVal,
       email = emailVal,
       phones = phonesVal,
-      cnp = cnpVal
+      cnp = cnpVal,
+      personal_number = personal_numberVal
     }
     end
   end
@@ -281,13 +294,15 @@ struct
       val email = (encodeOptional encodeString) (encodeKey(Tag(3), Code(2))) (#email m)
       val phones = (encodeRepeated PhoneNumber.encode) (encodeKey(Tag(4), Code(2))) (#phones m)
       val cnp = (encodePackedRepeated encodeInt32) (encodeKey(Tag(5), Code(2))) (#cnp m)
+      val personal_number = (encodeOptional encodeBytes) (encodeKey(Tag(6), Code(2))) (#personal_number m)
     in
       Word8Vector.concat [
         name,
         id,
         email,
         phones,
-        cnp
+        cnp,
+        personal_number
       ]
     end
 
@@ -311,6 +326,7 @@ struct
         | 5 => if (c = 2) then (decodeNextPacked (decodeInt32) (Builder.add_cnp) (decodeNextField) obj buff remaining)
         else (decodeNextUnpacked (decodeInt32) (Builder.add_cnp) (decodeNextField) obj buff remaining)
 
+        | 6 => decodeNextUnpacked (decodeBytes) (Builder.set_personal_number) (decodeNextField) obj buff remaining
         | n => raise Exception(PARSE, "Unknown field tag")
       end
 
