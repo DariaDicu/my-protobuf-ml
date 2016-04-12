@@ -23,14 +23,16 @@ switch (type) {
 
     case FieldDescriptor::TYPE_FLOAT:
     case FieldDescriptor::TYPE_DOUBLE:
-      return MLTYPE_FLOAT;
+      return MLTYPE_REAL;
 
     case FieldDescriptor::TYPE_BOOL:
       return MLTYPE_BOOLEAN;
 
     case FieldDescriptor::TYPE_STRING:
-    case FieldDescriptor::TYPE_BYTES:
       return MLTYPE_STRING;
+
+    case FieldDescriptor::TYPE_BYTES:
+      return MLTYPE_WORD8VEC;
 
     case FieldDescriptor::TYPE_ENUM:
       return MLTYPE_VARIANT;
@@ -96,7 +98,8 @@ string PrimitiveTypeName(const FieldDescriptor::Type type) {
       case MLTYPE_BIGINT : return "int";
       case MLTYPE_BOOLEAN : return "bool";
       case MLTYPE_INT : return "int";
-      case MLTYPE_FLOAT : return "float";
+      case MLTYPE_REAL : return "real";
+      case MLTYPE_WORD8VEC : return "Word8Vector.vector";
       case MLTYPE_MESSAGE : return NULL;
       case MLTYPE_STRING : return "string";
       case MLTYPE_VARIANT : return NULL;

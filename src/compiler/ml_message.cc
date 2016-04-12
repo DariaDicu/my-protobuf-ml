@@ -83,7 +83,7 @@ namespace ml {
 		printer->Print("type t\n");
 		GenerateBuilderSignature(printer);
 		printer->Print("val encode : t -> Word8Vector.vector\n");
-		printer->Print("val decode : ByteBuffer.buffer -> t * parseResult\n");
+		printer->Print("val decode : ByteInputStream.stream -> t * parseResult\n");
 
 		// End is the same regardless of toplevel being true/false.
 		printer->Outdent();
@@ -99,7 +99,7 @@ namespace ml {
 		if (toplevel) {
 			string signature = descriptor_->name();
 			UpperString(&signature);
-			printer->Print("structure $structure$ :> $signature$ = \n",
+			printer->Print("structure $structure$ : $signature$ = \n",
 				"structure", structure,
 				"signature", signature);
 		} else {
@@ -127,7 +127,7 @@ namespace ml {
 			SanitizeForMl(name);
 
 			string type = GetFormattedTypeFromField(field);
-			UncapitalizeString(type);
+			if (type != "Word8Vector.vector") UncapitalizeString(type);
 
 			// TODO: decide if default should be required.
 			string label = LabelName(field->label());
@@ -218,7 +218,7 @@ namespace ml {
 		printer->Outdent();
 		printer->Print("in\n");
 		printer->Indent();
-		printer->Print("Word8Vector.concat [\n");
+		printer->Print("encodeMessage (Word8Vector.concat [\n");
 		printer->Indent();
 		// Listing all encoded fields in the message.
 		for (int i = 0; i < descriptor_->field_count(); i++) {
@@ -231,7 +231,7 @@ namespace ml {
 		}
 		printer->Print("\n");
 		printer->Outdent();
-		printer->Print("]\n");
+		printer->Print("])\n");
 		printer->Outdent();
 		printer->Print("end\n\n");
 		printer->Outdent();
@@ -431,7 +431,7 @@ namespace ml {
 			SanitizeForMl(name);
 
 			string type = GetFormattedTypeFromField(field);
-			UncapitalizeString(type);
+			if (type != "Word8Vector.vector") UncapitalizeString(type);
 
 			string label = LabelName(field->label());
 

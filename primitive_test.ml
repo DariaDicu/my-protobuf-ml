@@ -1,11 +1,7 @@
+(* TODO: test float & double *)
+
 use "MlGenLib.ml";
 
-(* PolyML:
-	
-	use "primitive_test.ml"; runTests();
-
-
-*)
 exception invalidTest
 
 
@@ -137,6 +133,7 @@ fun test 0 = test_serialization (encodeInt32, decodeInt32) 332323
   | test n = raise invalidTest
 
 val lastTest = 62;
+
 (* use "primitive_test.ml"; runTests(); *)
 fun runTests () = 
 let

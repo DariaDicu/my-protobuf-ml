@@ -102,7 +102,7 @@ namespace ml {
 		if (toplevel) {
 			string signature = descriptor_->name();
 			UpperString(&signature);
-			printer->Print("structure $name$ :> $signature$ = \n",
+			printer->Print("structure $name$ : $signature$ = \n",
 				"name", name_,
 				"signature", signature);
 		} else {
