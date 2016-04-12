@@ -36,21 +36,21 @@ struct
 	fun getTail b = Word8.>>(Word8.<<(b, Word.fromInt 1), Word.fromInt 1)
 end
 
-signature BYTE_BUFFER = 
+signature BYTE_STREAM = 
 sig
-	type buffer
-	val fromVector : Word8Vector.vector -> buffer
-	val fromList  : byte list -> buffer
+	type stream
+	val fromVector : Word8Vector.vector -> stream
+	val fromList  : byte list -> stream
 	(* Modifies buffer by putting index after next byte *)
-	val nextByte : buffer -> byte * buffer
+	val nextByte : stream -> byte * stream
 	(* Modifies buffer by putting index after next block. Returns both 
 	buffers, first the next block, then the remaining one. *)
-	val nextFixedBlock : buffer -> int -> Word8Vector.vector * buffer
+	val nextFixedBlock : stream -> int -> Word8Vector.vector * stream
 end
 
-structure ByteBuffer :> BYTE_BUFFER =
+structure ByteInputStream :> BYTE_STREAM =
 struct
-	type buffer = Word8Vector.vector * int
+	type stream = Word8Vector.vector * int
 	fun fromVector buff = (buff, 0)
 	fun fromList l = fromVector (Word8Vector.fromList l)
 	fun nextByte (buff, i) =
@@ -72,13 +72,13 @@ struct
 		end
 end
 
-datatype parseResult = ParseResult of ByteBuffer.buffer*parsedByteCount
+datatype parseResult = ParseResult of ByteInputStream.stream*parsedByteCount
 
 (* This returns the varint value, remaining buffer and #bytes parsed,
 but not the key. The key parsing is delegated to parent message. *)
 fun decodeVarint_core buff i prev_val (ParsedByteCount(s)) = 
 let 
-	val (b, next_buff) = ByteBuffer.nextByte buff
+	val (b, next_buff) = ByteInputStream.nextByte buff
 	(* TODO - Treat overflow? *)
 	(* little endian *)
 	val next_val = 
@@ -118,7 +118,7 @@ end
 
 fun decodeFixedWord totalBytes i remaining buff prev_val =
 let
-	val (b, next_buff) = ByteBuffer.nextByte buff
+	val (b, next_buff) = ByteInputStream.nextByte buff
 	val new_byte = LargeWord.fromInt (Word8.toInt b)
 	val next_val = 
 		prev_val + LargeWord.<<(new_byte, Word.fromInt(i * 8))
@@ -169,7 +169,7 @@ fun decodeString buff =
 let
 	val (length, ParseResult(buff, ParsedByteCount(lenBytes))) =
 		decodeVarint buff
-	val (body, buff) = ByteBuffer.nextFixedBlock buff length
+	val (body, buff) = ByteInputStream.nextFixedBlock buff length
 	val string_value = Byte.bytesToString body
 in
 	(string_value, ParseResult(buff, ParsedByteCount(lenBytes + length)))
