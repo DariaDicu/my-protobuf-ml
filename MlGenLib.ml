@@ -136,6 +136,10 @@ fun decodeFixed64Word buff = decodeFixedWord 8 0 8 buff 0wx0
 fun decodeSfixed32 buff = 
 let
 	val (w, parse_result) = decodeFixed32Word buff
+	val sign_bit = ((LargeWord.andb(w, 0wx80000000)) = 0wx80000000)
+	(* We must copy the sign bit on bits 32-63, since parsed val is 32-bits. *)
+	val w = if (sign_bit) then (LargeWord.orb(w, 0wxFFFFFFFF00000000))
+		else w
 in
 	(LargeWord.toIntX w, parse_result)
 end
@@ -146,6 +150,10 @@ let
 in
 	(LargeWord.toIntX w, parse_result)
 end
+
+fun decodeFixed32 buff = decodeSfixed32 buff
+
+fun decodeFixed64 buff = decodeSfixed64 buff
 
 fun decodeDouble buff = 
 let
