@@ -16,21 +16,3 @@ message M1 {
 
 message M3 {
 }
-
-
-message M3 {
-}
-
-message M4 {
-	optional M3 message3 = 1;
-}
-
-message M1 {
-	message M1 {
-		optional M3 message3 = 1;
-	}
-	message M2 {
-		optional M1 message1 = 1;
-	}
-	optional M4 message5 = 1;
-}

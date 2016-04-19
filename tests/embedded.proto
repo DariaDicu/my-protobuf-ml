@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+message M1 {
+	message M2 {
+		optional string name = 1;
+		required int32 id = 2;
+	}
+	required M2 message2_1 = 1;
+	optional M2 message2_2 = 2;
+	repeated M3 message3_list = 3;
+}
+
+message M3 {
+	optional string name = 1;
+}
