@@ -134,12 +134,7 @@ ml_file.o: ml_file.cc ml_enum.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/__tree \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/functional \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/__functional_03 \
-  ml_file.h ml_message.h \
-  /usr/local/include/google/protobuf/compiler/code_generator.h \
-  /usr/local/include/google/protobuf/io/printer.h \
-  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/map \
-  /usr/local/include/google/protobuf/io/zero_copy_stream.h \
-  /usr/local/include/google/protobuf/descriptor.pb.h \
+  ml_file.h /usr/local/include/google/protobuf/descriptor.pb.h \
   /usr/local/include/google/protobuf/arena.h \
   /usr/local/include/google/protobuf/stubs/atomic_sequence_num.h \
   /usr/local/include/google/protobuf/arenastring.h \
@@ -153,9 +148,19 @@ ml_file.o: ml_file.cc ml_enum.h \
   /usr/local/include/google/protobuf/repeated_field.h \
   /usr/local/include/google/protobuf/stubs/casts.h \
   /usr/local/include/google/protobuf/extension_set.h \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/map \
   /usr/local/include/google/protobuf/generated_enum_reflection.h \
   /usr/local/include/google/protobuf/generated_enum_util.h \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/unordered_map \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/__hash_table \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/cmath \
+  /usr/include/math.h ml_message.h ml_ordering.h \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/stack \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/deque \
   google/protobuf/stubs/strutil.h \
+  /usr/local/include/google/protobuf/compiler/code_generator.h \
+  /usr/local/include/google/protobuf/io/printer.h \
+  /usr/local/include/google/protobuf/io/zero_copy_stream.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/iostream \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/ios \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/__locale \
@@ -561,16 +566,6 @@ ml_enum.h:
 
 ml_file.h:
 
-ml_message.h:
-
-/usr/local/include/google/protobuf/compiler/code_generator.h:
-
-/usr/local/include/google/protobuf/io/printer.h:
-
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/map:
-
-/usr/local/include/google/protobuf/io/zero_copy_stream.h:
-
 /usr/local/include/google/protobuf/descriptor.pb.h:
 
 /usr/local/include/google/protobuf/arena.h:
@@ -599,11 +594,35 @@ ml_message.h:
 
 /usr/local/include/google/protobuf/extension_set.h:
 
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/map:
+
 /usr/local/include/google/protobuf/generated_enum_reflection.h:
 
 /usr/local/include/google/protobuf/generated_enum_util.h:
 
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/unordered_map:
+
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/__hash_table:
+
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/cmath:
+
+/usr/include/math.h:
+
+ml_message.h:
+
+ml_ordering.h:
+
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/stack:
+
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/deque:
+
 google/protobuf/stubs/strutil.h:
+
+/usr/local/include/google/protobuf/compiler/code_generator.h:
+
+/usr/local/include/google/protobuf/io/printer.h:
+
+/usr/local/include/google/protobuf/io/zero_copy_stream.h:
 
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/iostream:
 

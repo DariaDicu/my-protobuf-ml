@@ -1,4 +1,5 @@
 (* TODO: test float & double *)
+(* TODO: check width of encoding *)
 
 use "MlGenLib.ml";
 

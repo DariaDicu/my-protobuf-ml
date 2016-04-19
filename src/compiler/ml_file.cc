@@ -31,6 +31,7 @@
 #include "ml_enum.h"
 #include "ml_file.h"
 #include "ml_message.h"
+#include "ml_ordering.h"
 
 #include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/io/printer.h>
@@ -47,6 +48,9 @@ namespace ml {
 // TODO(dicu): module name here should be resolved in case of conflicts.
 FileGenerator::FileGenerator(const FileDescriptor* file) : file_(file) {
 	modulename_ = file->name();
+	MessageSorter sorter(file_);
+	message_order_ = sorter.GetOrdering();
+	SortNestedTypes();
 }
 
 FileGenerator::~FileGenerator() {}
@@ -62,13 +66,32 @@ void FileGenerator::Generate(io::Printer* printer) {
 		generator.GenerateStructure(printer, true /* toplevel */);
 		printer->Print("\n");
 	}
-	for (int i = 0; i < file_->message_type_count(); i++) {
-		MessageGenerator generator(file_->message_type(i));
+	for (int i = 0; i < ordered_nested_types_.size(); i++) {
+		MessageGenerator generator(ordered_nested_types_[i], &message_order_);
 		generator.GenerateSignature(printer, true /* toplevel */);
 		printer->Print("\n");
 		generator.GenerateStructure(printer, true /* toplevel */);
 		printer->Print("\n");
 	}
+}
+
+struct op_comp : std::binary_function<const Descriptor*, const Descriptor*, bool>
+{
+    op_comp(const unordered_map<const Descriptor*, int>* order) : order_(order) {}
+    bool operator() (const Descriptor* d1, const Descriptor* d2) {
+		return (*order_).find(d1)->second < (*order_).find(d2)->second;
+	}
+    const unordered_map<const Descriptor*, int>* order_;
+};
+
+void FileGenerator::SortNestedTypes() {
+	vector<const Descriptor*> ordered_nested_types;
+	for (int i = 0; i < file_->message_type_count(); i++) {
+		ordered_nested_types.push_back(file_->message_type(i));
+	}
+	std::sort(ordered_nested_types.begin(), ordered_nested_types.end(), 
+		op_comp(&message_order_));
+	ordered_nested_types_ = ordered_nested_types;
 }
 
 }  // namespace ml

@@ -17,7 +17,7 @@ type key = int * int
 datatype tag = Tag of int
 datatype code = Code of int
 datatype parsedByteCount = ParsedByteCount of int
-datatype errorCode = PARSE | ENCODE | DECODE;
+datatype errorCode = BUILD | ENCODE | DECODE;
 exception Exception of errorCode*string
 
 signature ML_GEN_BYTE = 
@@ -207,8 +207,11 @@ fun decodeInt32 buff = unsignedToSigned (decodeVarint buff)
 fun decodeInt64 buff = unsignedToSigned (decodeVarint buff)
 fun decodeUint32 buff = decodeVarint buff
 fun decodeUint64 buff = decodeVarint buff
+
+(* Is unsignedtosigned really necessary here? TODO - Remove it.*)
 fun decodeSint32 buff = unsignedToSigned (decodeZigZag buff)
 fun decodeSint64 buff = unsignedToSigned (decodeZigZag buff)
+
 fun decodeBool buff = 
 let
 	val (v, parse_result) = decodeVarint buff
@@ -324,8 +327,9 @@ end
 
 (* Functions for encoding functions with different labels *)
 (* They compile, but not tested. *)
+(* changed to concat from fromList *)
 fun encodeRequired encode_fun encoded_key x = 
-	Word8Vector.fromList [encoded_key, encode_fun x]
+	Word8Vector.concat [encoded_key, encode_fun x]
 
 fun encodeRepeated encode_fun encoded_key [] = Word8Vector.fromList []
   | encodeRepeated encode_fun encoded_key (x::xs) = Word8Vector.concat 
@@ -416,7 +420,7 @@ let
     val (field_value, parse_result) = decode_fun buff
     val ParseResult(buff, ParsedByteCount(parsed_bytes)) = parse_result
     val obj = if (remaining >= parsed_bytes) then modifier_fun (obj, field_value)
-		else raise Exception(PARSE, "Error in matching the message length with fields length.")
+		else raise Exception(DECODE, "Error in matching the message length with fields length.")
 in
     rec_fun buff obj (remaining - parsed_bytes)
 end
@@ -440,7 +444,7 @@ let
     val (field_value, parse_result) = decode_fun buff
     val ParseResult(buff, ParsedByteCount(parsed_bytes)) = parse_result
     val obj = if (remaining >= parsed_bytes) then modifier_fun (obj, field_value)
-		else raise Exception(PARSE, "Error in matching the specified packed length with actual length.")
+		else raise Exception(DECODE, "Error in matching the specified packed length with actual length.")
 in
 	if (remaining > parsed_bytes) then
 		decodeNextPacked_core decode_fun modifier_fun obj buff (remaining - parsed_bytes)

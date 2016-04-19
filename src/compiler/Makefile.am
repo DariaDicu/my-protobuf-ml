@@ -8,4 +8,5 @@ protoc_gen_ml_SOURCES = 	\
 	ml_file.cc				\
 	ml_generator.cc			\
 	ml_helpers.cc			\
+	ml_ordering.cc			\
 	ml_message.cc

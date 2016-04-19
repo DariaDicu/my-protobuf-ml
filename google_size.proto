@@ -1,0 +1,138 @@
+syntax = "proto2";
+
+package benchmarks;
+
+option java_outer_classname = "GoogleSize";
+option optimize_for = CODE_SIZE;
+
+message SizeMessage1 {
+  required string field1 = 1;
+  string field9 = 9;
+  string field18 = 18;
+  bool field80 = 80 [default=false];
+  bool field81 = 81 [default=true];
+  required int32 field2 = 2;
+  required int32 field3 = 3;
+  int32 field280 = 280;
+  int32 field6 = 6 [default=0];
+  int64 field22 = 22;
+  string field4 = 4;
+  repeated fixed64 field5 = 5;
+  bool field59 = 59 [default=false];
+  string field7 = 7;
+  int32 field16 = 16;
+  int32 field130 = 130 [default=0];
+  bool field12 = 12 [default=true];
+  bool field17 = 17 [default=true];
+  bool field13 = 13 [default=true];
+  bool field14 = 14 [default=true];
+  int32 field104 = 104 [default=0];
+  int32 field100 = 100 [default=0];
+  int32 field101 = 101 [default=0];
+  string field102 = 102;
+  string field103 = 103;
+  int32 field29 = 29 [default=0];
+  bool field30 = 30 [default=false];
+  int32 field60 = 60 [default=-1];
+  int32 field271 = 271 [default=-1];
+  int32 field272 = 272 [default=-1];
+  int32 field150 = 150;
+  int32 field23 = 23 [default=0];
+  bool field24 = 24 [default=false];
+  int32 field25 = 25 [default=0];
+  SizeMessage1SubMessage field15 = 15;
+  bool field78 = 78;
+  int32 field67 = 67 [default=0];
+  int32 field68 = 68;
+  int32 field128 = 128 [default=0];
+  string field129 = 129 [default="xxxxxxxxxxxxxxxxxxxxx"];
+  int32 field131 = 131 [default=0];
+}
+
+message SizeMessage1SubMessage {
+  int32 field1 = 1 [default=0];
+  int32 field2 = 2 [default=0];
+  int32 field3 = 3 [default=0];
+  string field15 = 15;
+  bool field12 = 12 [default=true];
+  int64 field13 = 13;
+  int64 field14 = 14;
+  int32 field16 = 16;
+  int32 field19 = 19 [default=2];
+  bool field20  = 20 [default=true];
+  bool field28 = 28 [default=true];
+  fixed64 field21 = 21;
+  int32 field22 = 22;
+  bool field23 = 23 [ default=false ];
+  bool field206 = 206 [default=false];
+  fixed32 field203 = 203;
+  int32 field204 = 204;
+  string field205 = 205;
+  uint64 field207 = 207;
+  uint64 field300 = 300;
+}
+
+message SizeMessage2 {
+  string field1 = 1;
+  int64 field3 = 3;
+  int64 field4 = 4;
+  int64 field30 = 30;
+  bool field75  = 75 [default=false];
+  string field6 = 6;
+  bytes field2 = 2;
+  int32 field21 = 21 [default=0];
+  int32 field71 = 71;
+  float field25 = 25;
+  int32 field109 = 109 [default=0];
+  int32 field210 = 210 [default=0];
+  int32 field211 = 211 [default=0];
+  int32 field212 = 212 [default=0];
+  int32 field213 = 213 [default=0];
+  int32 field216 = 216 [default=0];
+  int32 field217 = 217 [default=0];
+  int32 field218 = 218 [default=0];
+  int32 field220 = 220 [default=0];
+  int32 field221 = 221 [default=0];
+  float field222 = 222 [default=0.0];
+  int32 field63 = 63;
+
+  repeated group Group1 = 10 {
+    required float field11 = 11;
+    float field26 = 26;
+    string field12 = 12;
+    string field13 = 13;
+    repeated string field14 = 14;
+    required uint64 field15 = 15;
+    int32 field5 = 5;
+    string field27 = 27;
+    int32 field28 = 28;
+    string field29 = 29;
+    string field16 = 16;
+    repeated string field22 = 22;
+    repeated int32 field73 = 73;
+    int32 field20 = 20 [default=0];
+    string field24 = 24;
+    SizeMessage2GroupedMessage field31 = 31;
+  }
+  repeated string field128 = 128;
+  int64 field131 = 131;
+  repeated string field127 = 127;
+  int32 field129 = 129;
+  repeated int64 field130 = 130;
+  bool field205 = 205 [default=false];
+  bool field206 = 206 [default=false];
+}
+
+message SizeMessage2GroupedMessage {
+  float field1 = 1;
+  float field2 = 2;
+  float field3 = 3 [default=0.0];
+  bool field4 = 4;
+  bool field5 = 5;
+  bool field6 = 6 [default=true];
+  bool field7 = 7 [default=false];
+  float field8 = 8;
+  bool field9 = 9;
+  float field10 = 10;
+  int64 field11 = 11;
+}

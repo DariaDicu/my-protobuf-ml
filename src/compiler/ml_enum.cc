@@ -93,7 +93,7 @@ namespace ml {
 		printer->Outdent();
 		printer->Print("\n");
 		printer->Print("val encode : t -> Word8Vector.vector\n\n");
-		printer->Print("val decode : ByteBuffer.buffer -> t * parseResult\n\n");
+		printer->Print("val decode : ByteInputStream.stream -> t * parseResult\n\n");
 		printer->Outdent();
 		printer->Print("end\n");
 	}
@@ -164,7 +164,7 @@ namespace ml {
 				"tag", tag);
 		}
 		// Case when not matched
-		printer->Print("\n| n => raise Exception(PARSE, "
+		printer->Print("\n| n => raise Exception(DECODE, "
 			"\"Attempting to parse enum of unknown tag value.\")\n");
 		printer->Outdent();
 		printer->Print("in\n");

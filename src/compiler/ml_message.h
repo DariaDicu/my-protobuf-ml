@@ -3,6 +3,7 @@
 #define GOOGLE_PROTOBUF_COMPILER_ML_MESSAGE_H__
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include <google/protobuf/descriptor.h>
 
@@ -19,7 +20,8 @@ namespace ml {
 
 class MessageGenerator {
  public:
-  explicit MessageGenerator(const Descriptor* descriptor);
+  explicit MessageGenerator(const Descriptor* descriptor, 
+    const unordered_map<const Descriptor*, int>* message_order);
   ~MessageGenerator();
 
   void GenerateSignature(io::Printer* printer, bool toplevel);
@@ -31,8 +33,9 @@ class MessageGenerator {
 
  private:
   const Descriptor* descriptor_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageGenerator);
+  const unordered_map<const Descriptor*, int>* message_order_;
+  vector<const Descriptor*> ordered_nested_types_;
+  void SortNestedTypes();
 };
 
 }  // namespace ml

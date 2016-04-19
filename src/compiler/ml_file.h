@@ -37,9 +37,11 @@
 
 #include <memory>
 #ifndef _SHARED_PTR_H
+#include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/stubs/shared_ptr.h>
 #endif
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include <google/protobuf/stubs/common.h>
 
@@ -65,7 +67,12 @@ class FileGenerator {
 
   void Generate(io::Printer* printer);
 
+ private:
+  void SortNestedTypes();
+
   const FileDescriptor* file_;
+  std::unordered_map<const Descriptor*, int> message_order_;
+  vector<const Descriptor*> ordered_nested_types_;
   string modulename_;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FileGenerator);

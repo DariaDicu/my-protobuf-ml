@@ -171,6 +171,10 @@ string GetCanonicalTypeFromField(const FieldDescriptor* field) {
     CapitalizeString(name);
     return name.c_str();
   }
+  if (field->type() == FieldDescriptor::TYPE_GROUP) {
+    GOOGLE_LOG(FATAL) << "ML library does not support definition files "
+      "containing groups.";
+  }
   GOOGLE_LOG(FATAL) << "Can't get here.";
   return NULL;
 }

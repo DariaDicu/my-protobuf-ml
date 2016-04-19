@@ -2,6 +2,8 @@
 #define GOOGLE_PROTOBUF_COMPILER_ML_HELPERS_H__
 
 #include <string>
+#include <algorithm>
+#include <unordered_map>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor.h>
 

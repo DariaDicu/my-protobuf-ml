@@ -107,7 +107,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_protoc_gen_ml_OBJECTS = main.$(OBJEXT) ml_enum.$(OBJEXT) \
 	ml_file.$(OBJEXT) ml_generator.$(OBJEXT) ml_helpers.$(OBJEXT) \
-	ml_message.$(OBJEXT)
+	ml_ordering.$(OBJEXT) ml_message.$(OBJEXT)
 protoc_gen_ml_OBJECTS = $(am_protoc_gen_ml_OBJECTS)
 protoc_gen_ml_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_$(V))
@@ -215,7 +215,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
-LD = /Library/Developer/CommandLineTools/usr/bin/ld
+LD = /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
 LDFLAGS = 
 LIBOBJS = 
 LIBS = 
@@ -315,6 +315,7 @@ protoc_gen_ml_SOURCES = \
 	ml_file.cc				\
 	ml_generator.cc			\
 	ml_helpers.cc			\
+	ml_ordering.cc			\
 	ml_message.cc
 
 all: all-am
@@ -416,6 +417,7 @@ include ./$(DEPDIR)/ml_file.Po
 include ./$(DEPDIR)/ml_generator.Po
 include ./$(DEPDIR)/ml_helpers.Po
 include ./$(DEPDIR)/ml_message.Po
+include ./$(DEPDIR)/ml_ordering.Po
 
 .cc.o:
 	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

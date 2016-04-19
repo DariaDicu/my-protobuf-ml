@@ -32,17 +32,23 @@
 #include "ml_helpers.h"
 #include "ml_message.h"
 
+#include <algorithm>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/stubs/strutil.h>
+#include <unordered_map>
 
 namespace google {
 namespace protobuf {
 namespace compiler {
 namespace ml {
-	MessageGenerator::MessageGenerator(const Descriptor* descriptor):
-		descriptor_(descriptor) {}
+	MessageGenerator::MessageGenerator(const Descriptor* descriptor,
+		const unordered_map<const Descriptor*, int>* message_order):
+		descriptor_(descriptor),
+		message_order_(message_order) {
+			SortNestedTypes();
+		}
 
 	MessageGenerator::~MessageGenerator() {};
 
@@ -71,11 +77,12 @@ namespace ml {
 		}
 
 		// Print child signatures.
-		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
-			MessageGenerator generator(descriptor_->nested_type(i));
+		for (int i = 0; i < ordered_nested_types_.size(); i++) {
+			MessageGenerator generator(ordered_nested_types_[i], 
+				message_order_);
 			generator.GenerateSignature(printer, false /* toplevel */);
 			// Print type alias.
-			string name = descriptor_->nested_type(i)->name();
+			string name = ordered_nested_types_[i]->name();
 			UncapitalizeString(name);
 			printer->Print("type $name$\n", "name", name);
 		}
@@ -114,8 +121,9 @@ namespace ml {
 			EnumGenerator generator(descriptor_->enum_type(i));
 			generator.GenerateStructure(printer, false /* toplevel */);
 		}
-		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
-			MessageGenerator generator(descriptor_->nested_type(i));
+		for (int i = 0; i < ordered_nested_types_.size(); i++) {
+			MessageGenerator generator(ordered_nested_types_[i], 
+				message_order_);
 			generator.GenerateStructure(printer, false /* toplevel */);
 		}
 		// Print main type declaration.
@@ -247,7 +255,7 @@ namespace ml {
 		printer->Outdent();
 		printer->Print("else if (remaining < 0) then\n");
 		printer->Indent();
-		printer->Print("raise Exception(PARSE, \"Field encoding does not match "
+		printer->Print("raise Exception(DECODE, \"Field encoding does not match "
 			"length in message header.\")\n");
 		printer->Outdent();
 		printer->Print("else\n");
@@ -264,7 +272,7 @@ namespace ml {
 		printer->Indent();
 		printer->Print("if (remaining <= 0) then\n");
 		printer->Indent();
-		printer->Print("raise Exception(PARSE, \"Not enough bytes left after "
+		printer->Print("raise Exception(DECODE, \"Not enough bytes left after "
 			"parsing message field key.\")\n");
 		printer->Outdent();
 		printer->Print("else case (t) of ");
@@ -337,7 +345,7 @@ namespace ml {
 			}
 		}
 		// Raise exception for unknown tag. TODO: skip based on wire type, length.
-		printer->Print("\n| n => raise Exception(PARSE, \"Unknown field tag\")\n");
+		printer->Print("\n| n => raise Exception(DECODE, \"Unknown field tag\")\n");
 		printer->Outdent();
 		printer->Print("end\n\n");
 		printer->Outdent();
@@ -583,6 +591,25 @@ namespace ml {
 		printer->Print("end\n");
 		printer->Outdent();
 		printer->Print("end\n");
+	}
+
+	struct op_comp : std::binary_function<const Descriptor*, const Descriptor*, bool>
+    {
+	    op_comp(const unordered_map<const Descriptor*, int>* order) : order_(order) {}
+	    bool operator() (const Descriptor* d1, const Descriptor* d2) {
+			return (*order_).find(d1)->second < (*order_).find(d2)->second;
+		}
+	    const unordered_map<const Descriptor*, int>* order_;
+	};
+
+	void MessageGenerator::SortNestedTypes() {
+		vector<const Descriptor*> ordered_nested_types;
+		for (int i = 0; i < descriptor_->nested_type_count(); i++) {
+			ordered_nested_types.push_back(descriptor_->nested_type(i));
+		}
+		std::sort(ordered_nested_types.begin(), ordered_nested_types.end(), 
+			op_comp(message_order_));
+		ordered_nested_types_ = ordered_nested_types;
 	}
 }  // namespace ml
 }  // namespace compiler
