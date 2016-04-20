@@ -28,7 +28,7 @@ sig
 	val getTail : byte -> byte
 end
 
-structure MlGenByte :> ML_GEN_BYTE = 
+structure MlGenByte : ML_GEN_BYTE = 
 struct
 	fun fromInt n = Word8.fromInt n
 	fun toInt b = Word8.toInt b
@@ -48,7 +48,7 @@ sig
 	val nextFixedBlock : stream -> int -> Word8Vector.vector * stream
 end
 
-structure ByteInputStream :> BYTE_STREAM =
+structure ByteInputStream : BYTE_STREAM =
 struct
 	type stream = Word8Vector.vector * int
 	fun fromVector buff = (buff, 0)
