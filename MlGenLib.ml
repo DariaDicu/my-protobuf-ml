@@ -40,6 +40,7 @@ signature BYTE_STREAM =
 sig
 	type stream
 	val fromVector : Word8Vector.vector -> stream
+	val totalSize : stream -> int
 	val fromList  : byte list -> stream
 	(* Modifies buffer by putting index after next byte *)
 	val nextByte : stream -> byte * stream
@@ -53,6 +54,7 @@ struct
 	type stream = Word8Vector.vector * int
 	fun fromVector buff = (buff, 0)
 	fun fromList l = fromVector (Word8Vector.fromList l)
+	fun totalSize (buff, i) = Word8Vector.length buff
 	fun nextByte (buff, i) =
 		let
 			(*Subscript exception raise here if no next_byte*)
@@ -425,10 +427,11 @@ in
     rec_fun buff obj (remaining - parsed_bytes)
 end
 
-fun decodeFullHelper next_field_fun build_fun empty_obj buff =
+fun decodeFullHelper is_toplevel next_field_fun build_fun empty_obj buff =
 let
 	val (length, ParseResult(buff, ParsedByteCount(lenBytes))) =
-		decodeVarint buff
+		if (is_toplevel) then (ByteInputStream.totalSize buff, ParseResult(buff, ParsedByteCount(0)))
+		else decodeVarint buff
 	val (obj, buff) = next_field_fun buff empty_obj length
 in
 	(build_fun obj, ParseResult(buff, ParsedByteCount(lenBytes+length)))

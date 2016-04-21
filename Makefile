@@ -215,15 +215,15 @@ AUTOCONF = ${SHELL} /Users/dariadicu/Documents/my-protobuf-ml/missing autoconf
 AUTOHEADER = ${SHELL} /Users/dariadicu/Documents/my-protobuf-ml/missing autoheader
 AUTOMAKE = ${SHELL} /Users/dariadicu/Documents/my-protobuf-ml/missing automake-1.15
 AWK = awk
-CC = gcc
+CC = clang
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2 -DOBJC_ARC
-CPP = gcc -E
+CPP = clang -E
 CPPFLAGS = 
-CXX = g++
-CXXCPP = g++ -E
+CXX = clang++
+CXXCPP = clang++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2 -DNDEBUG
+CXXFLAGS = -stdlib=libc++ -O3 -g
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -280,8 +280,8 @@ abs_srcdir = /Users/dariadicu/Documents/my-protobuf-ml
 abs_top_builddir = /Users/dariadicu/Documents/my-protobuf-ml
 abs_top_srcdir = /Users/dariadicu/Documents/my-protobuf-ml
 ac_ct_AR = ar
-ac_ct_CC = gcc
-ac_ct_CXX = g++
+ac_ct_CC = clang
+ac_ct_CXX = 
 ac_ct_DUMPBIN = 
 am__include = include
 am__leading_dot = .

@@ -107,12 +107,13 @@ fun write_test_data_to_files () =
 let
 	val simple_message_instance = getSimpleMessageInstance ()
 	val primitives_message_instance = getPrimitivesMessageInstance ()
-	val encoded_simple_message = SimpleMessage.encode simple_message_instance
-	val encoded_primitives_message = FullPrimitiveCollection.encode primitives_message_instance
+	val encoded_simple_message = SimpleMessage.encodeToplevel simple_message_instance
+	val encoded_primitives_message = FullPrimitiveCollection.encodeToplevel primitives_message_instance
 in
 	(
 		writeToFile "simple_message.dat" encoded_simple_message;
-		writeToFile "primitives_message.dat" encoded_primitives_message
+		writeToFile "primitives_message.dat" encoded_primitives_message;
+		encoded_simple_message
 	)
 end
 
@@ -139,9 +140,9 @@ fun test 0 =
 	in
 		(
 			print("Running serialization 100.000 times on SimpleMessage: ");
-			testSerialization message_instance SimpleMessage.encode;
+			testSerialization message_instance SimpleMessage.encodeToplevel;
 			print("Running deserialization 100.000 times on SimpleMessage: ");
-			testDeserialization message_instance SimpleMessage.encode SimpleMessage.decode
+			testDeserialization message_instance SimpleMessage.encodeToplevel SimpleMessage.decodeToplevel
 		)
 	end
   | test 1 = (* Test for message of type FullPrimitiveCollection *)
@@ -150,10 +151,10 @@ fun test 0 =
 	in
 		(
 			print("Running serialization 100.000 times on FullPrimitiveCollection: ");
-			testSerialization message_instance FullPrimitiveCollection.encode;
+			testSerialization message_instance FullPrimitiveCollection.encodeToplevel;
 			print("Running deserialization 100.000 times on FullPrimitiveCollection: ");
-			testDeserialization message_instance FullPrimitiveCollection.encode 
-			FullPrimitiveCollection.decode
+			testDeserialization message_instance FullPrimitiveCollection.encodeToplevel 
+			FullPrimitiveCollection.decodeToplevel
 		)
 	end
   | test n = raise invalidTest
