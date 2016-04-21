@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+message SimpleMessage {
+	required int32 id = 1;
+	optional string name = 2;
+	repeated string phone_number = 3;
+}

@@ -111,8 +111,8 @@ let
 	val encoded_primitives_message = FullPrimitiveCollection.encodeToplevel primitives_message_instance
 in
 	(
-		writeToFile "simple_message.dat" encoded_simple_message;
-		writeToFile "primitives_message.dat" encoded_primitives_message;
+		writeToFile "benchmarks/simple_message.dat" encoded_simple_message;
+		writeToFile "benchmarks/primitives_message.dat" encoded_primitives_message;
 		encoded_simple_message
 	)
 end
