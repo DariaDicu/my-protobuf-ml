@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 int main() {
-	uint32_t x = bits32_of_real(3.0);
-	printf("%d\n", x);
+	double x = real_of_bits64(13903985423498049657ULL);
+	printf("%f\n", x);
 	return 0;
 }

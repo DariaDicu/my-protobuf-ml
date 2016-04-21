@@ -160,7 +160,7 @@ fun decodeFixed64 buff = decodeSfixed64 buff
 fun decodeDouble buff = 
 let
 	val (w, parse_result) = decodeFixed64Word buff
-	val v = LargeWord.toInt w
+	val v = LargeWord.toIntX w
 in
 	(real_of_bits64 v, parse_result)
 end
@@ -168,7 +168,7 @@ end
 fun decodeFloat buff = 
 let
 	val (w, parse_result) = decodeFixed32Word buff
-	val v = LargeWord.toInt w
+	val v = LargeWord.toIntX w
 in
 	(real_of_bits32 v, parse_result)
 end
