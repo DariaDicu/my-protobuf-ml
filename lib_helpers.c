@@ -1,3 +1,5 @@
+//$ gcc -dynamiclib -o lib_helpers.dylib lib_helpers.c
+
 #include <stdio.h>
 #include <stdint.h>
 

@@ -13,6 +13,7 @@ using namespace std;
 
 SimpleMessage simple_message;
 FullPrimitiveCollection primitives_message;
+FullPrimitiveCollection floating_point_message;
 
 void readSimpleMessageFromFile() {
 	fstream input("simple_message.dat", ios::in | ios::binary);
@@ -35,6 +36,14 @@ void readPrimitivesMessageFromFile() {
 	if (!primitives_message.ParseFromIstream(&input)) {
 		cerr << "Failed to parse FullPrimitiveCollection instance from primitives_message.dat\n";
 	}
+}
+
+void readFloatingPointMessageFromFile() {
+	fstream input("floating_point_message.dat", ios::in | ios::binary);
+	if (!floating_point_message.ParseFromIstream(&input)) {
+		cerr << "Failed to parse FullPrimitiveCollection instance from floating_point_message.dat\n";
+	}
+	cout << floating_point_message.my_double() << " is my double\n";
 }
 
 void serialize_simple_message_test() {
@@ -70,7 +79,25 @@ void serialize_primitives_message_test() {
     	std::chrono::high_resolution_clock::now();
     long long duration = 
     	std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
-    cout << "FullPrimitiveCollection serialization ran in " << duration << " ms\n";
+    cout << "FullPrimitiveCollection serialization (no floating point) ran in " << duration << " ms\n";
+}
+
+void serialize_floating_point_message_test() {
+	// Start timer.
+	std::chrono::high_resolution_clock::time_point start = 
+		std::chrono::high_resolution_clock::now();
+
+	for (int i = 0; i < 100000; i++) {
+		std::string output;
+		floating_point_message.SerializeToString(&output);
+	}
+
+	// Stop timer and print time.
+    std::chrono::high_resolution_clock::time_point finish = 
+    	std::chrono::high_resolution_clock::now();
+    long long duration = 
+    	std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+    cout << "FullPrimitiveCollection serialization (WITH floating point) ran in " << duration << " ms\n";
 }
 
 void deserialize_simple_message_test() {
@@ -114,18 +141,44 @@ void deserialize_primitives_message_test() {
     	std::chrono::high_resolution_clock::now();
     long long duration = 
     	std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
-    cout << "FullPrimitiveCollection deserialization test ran in " << duration << " ms\n";
+    cout << "FullPrimitiveCollection deserialization (no floating point) test ran in " << duration << " ms\n";
+
+}
+
+void deserialize_floating_point_message_test() {
+	// Prepare parse data string by serializing the default message.
+	string parsed_fp_message;
+	floating_point_message.SerializeToString(&parsed_fp_message);
+
+	// Start timer.
+	std::chrono::high_resolution_clock::time_point start = 
+		std::chrono::high_resolution_clock::now();
+
+	for (int i = 0; i < 100000; i++) {
+		FullPrimitiveCollection temporary;
+		temporary.ParseFromString(parsed_fp_message);
+	}
+
+	// Stop timer and print time.
+    std::chrono::high_resolution_clock::time_point finish = 
+    	std::chrono::high_resolution_clock::now();
+    long long duration = 
+    	std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+    cout << "FullPrimitiveCollection deserialization (WITH floating point) test ran in " << duration << " ms\n";
 
 }
 
 int main() {
 	readSimpleMessageFromFile();
 	readPrimitivesMessageFromFile();
+	readFloatingPointMessageFromFile();
 
 	serialize_simple_message_test();
 	serialize_primitives_message_test();
+	serialize_floating_point_message_test();
 	deserialize_simple_message_test();
 	deserialize_primitives_message_test();
+	deserialize_floating_point_message_test();
 
 	return 0;
 }
