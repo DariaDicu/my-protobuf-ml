@@ -3,7 +3,7 @@ use "benchmarks/primitives.pb.ml";
 use "MlGenLib.ml";
 
 
-val timer = ref (Timer.totalCPUTimer ());
+val timer = ref (Timer.totalRealTimer ());
 
 (* Returns a Word8Vector from the raw bits in the file *)
 fun getByteInputStream file_name = 
@@ -24,13 +24,13 @@ in
 	BinIO.flushOut ostream)
 end
 
-fun reset_timer () = (timer := Timer.startCPUTimer ())
+fun reset_timer () = (timer := Timer.startRealTimer ())
 
 fun print_time () = 
 let 
 	fun print_time' t = print("Test ran in " ^ (Time.toString t) ^ " s\n")
 in
-	print_time' ((#usr) (Timer.checkCPUTimer (!timer)))
+	print_time' (Timer.checkRealTimer (!timer))
 end
 
 (* Prints the CPU time taken to serialize a SimpleMessage 100.000 times *)
@@ -53,11 +53,12 @@ fun testDeserialization message_instance encode_function decode_function =
 let
 	val counter = ref 100000
 	val raw_bytes = encode_function message_instance
+	val input_stream = ByteInputStream.fromVector raw_bytes
 in
 	(
 		reset_timer();
 		while !counter > 0 do (
-			decode_function (ByteInputStream.fromVector raw_bytes);
+			decode_function input_stream;
 			counter := !counter - 1
 		);
 		print_time()

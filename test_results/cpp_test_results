@@ -1,0 +1,43 @@
+did23:benchmarks dariadicu$ ./a.out 
+-85521.2 is my double
+SimpleMessage serialization test ran in 95 ms
+FullPrimitiveCollection serialization (no floating point) ran in 98 ms
+FullPrimitiveCollection serialization (WITH floating point) ran in 78 ms
+SimpleMessage deserialization test ran in 190 ms
+FullPrimitiveCollection deserialization (no floating point) test ran in 92 ms
+FullPrimitiveCollection deserialization (WITH floating point) test ran in 97 ms
+did23:benchmarks dariadicu$ ./a.out
+-85521.2 is my double
+SimpleMessage serialization test ran in 99 ms
+FullPrimitiveCollection serialization (no floating point) ran in 97 ms
+FullPrimitiveCollection serialization (WITH floating point) ran in 80 ms
+SimpleMessage deserialization test ran in 183 ms
+FullPrimitiveCollection deserialization (no floating point) test ran in 90 ms
+FullPrimitiveCollection deserialization (WITH floating point) test ran in 98 ms
+did23:benchmarks dariadicu$ ./a.out
+-85521.2 is my double
+SimpleMessage serialization test ran in 96 ms
+FullPrimitiveCollection serialization (no floating point) ran in 99 ms
+FullPrimitiveCollection serialization (WITH floating point) ran in 78 ms
+SimpleMessage deserialization test ran in 178 ms
+FullPrimitiveCollection deserialization (no floating point) test ran in 96 ms
+FullPrimitiveCollection deserialization (WITH floating point) test ran in 97 ms
+did23:benchmarks dariadicu$ ./a.out
+-85521.2 is my double
+SimpleMessage serialization test ran in 104 ms
+FullPrimitiveCollection serialization (no floating point) ran in 96 ms
+FullPrimitiveCollection serialization (WITH floating point) ran in 82 ms
+SimpleMessage deserialization test ran in 179 ms
+FullPrimitiveCollection deserialization (no floating point) test ran in 89 ms
+FullPrimitiveCollection deserialization (WITH floating point) test ran in 96 ms
+did23:benchmarks dariadicu$ ./a.out
+-85521.2 is my double
+SimpleMessage serialization test ran in 112 ms
+FullPrimitiveCollection serialization (no floating point) ran in 98 ms
+FullPrimitiveCollection serialization (WITH floating point) ran in 89 ms
+SimpleMessage deserialization test ran in 192 ms
+FullPrimitiveCollection deserialization (no floating point) test ran in 95 ms
+FullPrimitiveCollection deserialization (WITH floating point) test ran in 108 ms
+
+Simple message: serialization = (0.099+0.096+0.104)/3 = 0.099
+	deserialization = (0.183+0.178+0.179)/3 = 0.18

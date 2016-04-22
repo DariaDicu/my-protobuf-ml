@@ -1,0 +1,43 @@
+runTests();
+Running serialization 100.000 times on SimpleMessage: Test ran in 0.340 s
+Running deserialization 100.000 times on SimpleMessage: Test ran in 0.818 s
+Running serialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 1.519 s
+Running deserialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 8.811 s
+Running serialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 3.769 s
+Running deserialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 3.402 s
+val it = (): unit
+> runTests();
+Running serialization 100.000 times on SimpleMessage: Test ran in 0.461 s
+Running deserialization 100.000 times on SimpleMessage: Test ran in 0.649 s
+Running serialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 1.296 s
+Running deserialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 1.891 s
+Running serialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 1.157 s
+Running deserialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 3.052 s
+val it = (): unit
+> runTests();
+Running serialization 100.000 times on SimpleMessage: Test ran in 0.305 s
+Running deserialization 100.000 times on SimpleMessage: Test ran in 1.248 s
+Running serialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 0.710 s
+Running deserialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 2.475 s
+Running serialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 1.329 s
+Running deserialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 2.597 s
+val it = (): unit
+> runTests();
+Running serialization 100.000 times on SimpleMessage: Test ran in 0.168 s
+Running deserialization 100.000 times on SimpleMessage: Test ran in 0.519 s
+Running serialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 0.480 s
+Running deserialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 1.672 s
+Running serialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 2.233 s
+Running deserialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 3.655 s
+val it = (): unit
+> runTests();
+Running serialization 100.000 times on SimpleMessage: Test ran in 0.293 s
+Running deserialization 100.000 times on SimpleMessage: Test ran in 0.671 s
+Running serialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 1.211 s
+Running deserialization 100.000 times on FullPrimitiveCollection (no floating point): Test ran in 1.783 s
+Running serialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 1.132 s
+Running deserialization 100.000 times on FullPrimitiveCollection (WITH floating point): Test ran in 2.722 s
+val it = (): unit
+
+Totals (middle3)
+SimpleMessage: 0.311 (ser) + (0.649+1.248+0.519)/3=0.805 (deser)

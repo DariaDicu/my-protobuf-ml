@@ -1,0 +1,42 @@
+did23:benchmarks dariadicu$ ./ocaml_perf_test 
+Simple message serialization ran in 1.016375
+Primitives message (no floats) serialization ran in 2.776834
+Primitives message (WITH floats) serialization ran in 3.070254
+Simple message deserialization ran in 0.964232
+Primitives message (no floats) deserialization ran in 2.132584
+Primitives message (WITH floats) deserialization ran in 2.332152
+done
+did23:benchmarks dariadicu$ ./ocaml_perf_test 
+Simple message serialization ran in 1.006751
+Primitives message (no floats) serialization ran in 2.747234
+Primitives message (WITH floats) serialization ran in 3.085982
+Simple message deserialization ran in 0.964409
+Primitives message (no floats) deserialization ran in 2.160014
+Primitives message (WITH floats) deserialization ran in 2.34582
+done
+did23:benchmarks dariadicu$ ./ocaml_perf_test 
+Simple message serialization ran in 1.095205
+Primitives message (no floats) serialization ran in 2.890425
+Primitives message (WITH floats) serialization ran in 3.20916
+Simple message deserialization ran in 1.011555
+Primitives message (no floats) deserialization ran in 2.145342
+Primitives message (WITH floats) deserialization ran in 2.383008
+done
+did23:benchmarks dariadicu$ ./ocaml_perf_test 
+Simple message serialization ran in 1.175127
+Primitives message (no floats) serialization ran in 2.961626
+Primitives message (WITH floats) serialization ran in 3.263037
+Simple message deserialization ran in 0.9337
+Primitives message (no floats) deserialization ran in 2.084242
+Primitives message (WITH floats) deserialization ran in 2.227519
+done
+did23:benchmarks dariadicu$ ./ocaml_perf_test 
+Simple message serialization ran in 1.054816
+Primitives message (no floats) serialization ran in 2.875447
+Primitives message (WITH floats) serialization ran in 3.210439
+Simple message deserialization ran in 0.958852
+Primitives message (no floats) deserialization ran in 2.083309
+Primitives message (WITH floats) deserialization ran in 2.292298
+
+Simple message: serialization = (1.006751+1.095205+1.175127)/3=1.092
+	deserialization = (0.964409+1.011555+0.9337)/3=0.969

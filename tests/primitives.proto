@@ -1,25 +1,25 @@
-syntax = "proto3";
+syntax = "proto2";
 
 message SmallPrimitiveCollection {
-	int32 my_int32 = 1;
-	int64 my_int64 = 2;
-	string my_string = 3;
+	optional int32 my_int32 = 1;
+	optional int64 my_int64 = 2;
+	optional string my_string = 3;
 }
 
 message FullPrimitiveCollection {
-	int32 my_int32 = 1;
-	int64 my_int64 = 2;
-	uint32 my_uint32 = 3;
-	uint64 my_uint64 = 4;
-	sint32 my_sint32 = 5;
-	sint64 my_sint64 = 6;
-	fixed32 my_fixed32 = 7;
-	fixed64 my_fixed64 = 8;
-	sfixed32 my_sfixed32 = 9;
-	sfixed64 my_sfixed64 = 10;
-	bool my_bool = 11;
-	string my_string = 12;
-	bytes my_bytes = 13;
-	double my_double = 14;
-	float my_float = 15;
+	optional int32 my_int32 = 1;
+	optional int64 my_int64 = 2;
+	optional uint32 my_uint32 = 3;
+	optional uint64 my_uint64 = 4;
+	optional sint32 my_sint32 = 5;
+	optional sint64 my_sint64 = 6;
+	optional fixed32 my_fixed32 = 7;
+	optional fixed64 my_fixed64 = 8;
+	optional sfixed32 my_sfixed32 = 9;
+	optional sfixed64 my_sfixed64 = 10;
+	optional bool my_bool = 11;
+	optional string my_string = 12;
+	optional bytes my_bytes = 13;
+	optional double my_double = 14;
+	optional float my_float = 15;
 }
