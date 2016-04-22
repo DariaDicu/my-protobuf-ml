@@ -1,0 +1,115 @@
+.record [
+    .name SmallPrimitiveCollection
+    .field [
+        .name my-int32
+        .type protobuf-int32
+        .optional
+        .code 1
+    ]
+    .field [
+        .name my-int64
+        .type protobuf-int64
+        .optional
+        .code 2
+    ]
+    .field [
+        .name my-string
+        .type string
+        .optional
+        .code 3
+    ]
+]
+
+.record [
+    .name FullPrimitiveCollection
+    .field [
+        .name my-int32
+        .type protobuf-int32
+        .optional
+        .code 1
+    ]
+    .field [
+        .name my-int64
+        .type protobuf-int64
+        .optional
+        .code 2
+    ]
+    .field [
+        .name my-uint32
+        .type uint32
+        .optional
+        .code 3
+    ]
+    .field [
+        .name my-uint64
+        .type uint64
+        .optional
+        .code 4
+    ]
+    .field [
+        .name my-sint32
+        .type int32
+        .optional
+        .code 5
+    ]
+    .field [
+        .name my-sint64
+        .type int64
+        .optional
+        .code 6
+    ]
+    .field [
+        .name my-fixed32
+        .type uint32-fixed
+        .optional
+        .code 7
+    ]
+    .field [
+        .name my-fixed64
+        .type uint64-fixed
+        .optional
+        .code 8
+    ]
+    .field [
+        .name my-sfixed32
+        .type int32-fixed
+        .optional
+        .code 9
+    ]
+    .field [
+        .name my-sfixed64
+        .type int64-fixed
+        .optional
+        .code 10
+    ]
+    .field [
+        .name my-bool
+        .type bool
+        .optional
+        .code 11
+    ]
+    .field [
+        .name my-string
+        .type string
+        .optional
+        .code 12
+    ]
+    .field [
+        .name my-bytes
+        .type binary
+        .optional
+        .code 13
+    ]
+    .field [
+        .name my-double
+        .type float64
+        .optional
+        .code 14
+    ]
+    .field [
+        .name my-float
+        .type float32
+        .optional
+        .code 15
+    ]
+]

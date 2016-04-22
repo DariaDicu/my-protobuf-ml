@@ -1,0 +1,20 @@
+.record [
+    .name SimpleMessage
+    .field [
+        .name id
+        .type protobuf-int32
+        .code 1
+    ]
+    .field [
+        .name name
+        .type string
+        .optional
+        .code 2
+    ]
+    .field [
+        .name phone-number
+        .type string
+        .repeated
+        .code 3
+    ]
+]
