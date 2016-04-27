@@ -1,6 +1,6 @@
 #! /bin/sh
 # Generated automatically by config.status (protobuf-ml) 1.0
-# Libtool was configured on host did23.sid.private.cam.ac.uk:
+# Libtool was configured on host dhcp-10-248-19-83.eduroam.wireless.private.cam.ac.uk:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.
@@ -162,7 +162,7 @@ old_postuninstall_cmds=""
 lock_old_archive_extraction=yes
 
 # A C compiler.
-LTCC="clang"
+LTCC="gcc"
 
 # LTCC compiler flags.
 LTCFLAGS="-g -O2 -DOBJC_ARC"
@@ -315,7 +315,7 @@ reload_cmds="\$LTCC \$LTCFLAGS -nostdlib \$wl-r -o \$output\$reload_objs"
 old_archive_cmds="\$AR \$AR_FLAGS \$oldlib\$oldobjs~\$RANLIB \$tool_oldlib"
 
 # A language specific compiler.
-CC="clang"
+CC="gcc"
 
 # Is the compiler the GNU compiler?
 with_gcc=yes
@@ -11668,7 +11668,7 @@ reload_cmds="\$LTCC \$LTCFLAGS -nostdlib \$wl-r -o \$output\$reload_objs"
 old_archive_cmds="\$AR \$AR_FLAGS \$oldlib\$oldobjs~\$RANLIB \$tool_oldlib"
 
 # A language specific compiler.
-CC="clang++"
+CC="g++"
 
 # Is the compiler the GNU compiler?
 with_gcc=yes

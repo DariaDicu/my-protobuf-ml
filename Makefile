@@ -164,7 +164,7 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in compile \
-	config.guess config.sub install-sh ltmain.sh missing
+	config.guess config.sub depcomp install-sh ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -215,15 +215,15 @@ AUTOCONF = ${SHELL} /Users/dariadicu/Documents/my-protobuf-ml/missing autoconf
 AUTOHEADER = ${SHELL} /Users/dariadicu/Documents/my-protobuf-ml/missing autoheader
 AUTOMAKE = ${SHELL} /Users/dariadicu/Documents/my-protobuf-ml/missing automake-1.15
 AWK = awk
-CC = clang
+CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2 -DOBJC_ARC
-CPP = clang -E
+CPP = gcc -E
 CPPFLAGS = 
-CXX = clang++
-CXXCPP = clang++ -E
+CXX = g++
+CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -stdlib=libc++ -O3 -g
+CXXFLAGS = -g -O2 -DNDEBUG
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -280,8 +280,8 @@ abs_srcdir = /Users/dariadicu/Documents/my-protobuf-ml
 abs_top_builddir = /Users/dariadicu/Documents/my-protobuf-ml
 abs_top_srcdir = /Users/dariadicu/Documents/my-protobuf-ml
 ac_ct_AR = ar
-ac_ct_CC = clang
-ac_ct_CXX = 
+ac_ct_CC = gcc
+ac_ct_CXX = g++
 ac_ct_DUMPBIN = 
 am__include = include
 am__leading_dot = .
@@ -334,7 +334,7 @@ top_builddir = .
 top_srcdir = .
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src/compiler
+SUBDIRS = src/compiler tests
 EXTRA_DIST = \
 	autogen.sh
 

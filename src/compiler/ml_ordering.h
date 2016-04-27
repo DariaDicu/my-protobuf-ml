@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <stack>
 #include <vector>
-#include <google/protobuf/stubs/strutil.h>
+#include "google/protobuf/stubs/strutil.h"
 #include <unordered_map>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor.h>
@@ -24,25 +24,68 @@ namespace ml {
 
 class MessageSorter {
   public:
-	explicit MessageSorter(const FileDescriptor* file);
-	~MessageSorter();
-	std::unordered_map<const Descriptor*, int> GetOrdering();
+    // Constructor takes as argument a definition file descriptor.
+  	explicit MessageSorter(const FileDescriptor* file);
+  	~MessageSorter();
+
+    // Returns a map where the key is a Descriptor and the value is the position
+    // of that Descriptor in the topological sort. If the "ordering" member of 
+    // the class is empty, the it calls sort(), otherwise it returns
+    // the stored ordering. 
+  	std::unordered_map<const Descriptor*, int> get_ordering();
 
    private:
-   	int index(const Descriptor* node);
-	void index_nodes(const Descriptor* node);
-  	void visit(const Descriptor* node);
-	std::set<string> get_child_references(const Descriptor *node);
-	void sort(const FileDescriptor *file);
+    // Returns the index associated with the given descriptor. Access time is 
+    // O(1) because indexes are values in a std::map.
+   	int get_index(const Descriptor* node);
 
-  	int index_cnt;
-  	// TODO: replace this with a std::vector.
-  	bool visited[1000000];
-  	bool in_stack[1000000];
+    // Visits all Descriptors accessible from the FileDescriptor and associates
+    // an unique integer in the range [0, total_descriptor_count) to each
+    // Descriptor, then stores it into index_map_.
+	  void index_nodes();
+
+    // Depth first search traversal used by index_nodes (see above).
+    void index_nodes_traversal(const Descriptor* node);
+
+    // Performs the DFS for cycle detection and topological sort.
+  	void topological_traversal(const Descriptor* node);
+
+    // Returns a list of message names representing all the unresolved 
+    // references in the subtree, and builds the dependency graph for the 
+    // subtree rooted at "node". A reference of a node x to a message M is 
+    // unresolved if no node or sibling of a node on the path from the
+    // subtree root to node x has the name M.
+	  std::set<string> get_unresolved_references(const Descriptor *node);
+
+    // Performs a topological sorting and places the result in the "ordering"
+    // member, which is an unordered map where the key is a Descriptor and the 
+    // value is the position of that Descriptor in the topological sort.
+	  void sort();
+
+  	// Boolean vectors used for keeping track of visited and marked nodes in the
+    // topological sort depth first search.
+  	vector<bool> visited;
+  	vector<bool> in_stack;
+
+    // Stack used in the topological sort depth first search to place nodes
+    // after having visited all their neighbours. At the end of the sort, the 
+    // stack contains the topological ordering.
   	std::stack<const Descriptor*> stack;
-  	std::unordered_map<const Descriptor*, vector<const Descriptor*> > referenced_by;
-  	std::unordered_map<const Descriptor*, int> node_indexer;
+
+    // Adjacency list for the reference graph on which topological sort is 
+    // performed.
+  	std::unordered_map<const Descriptor*, vector<const Descriptor*> > adjacency_list;
+
+    // A map that contains an unique integer in the range 
+    // [0, total_descriptor_count) for each message Descriptor in the file.
+  	std::unordered_map<const Descriptor*, int> index_map;
+
+    // An unordered map where the key is a Descriptor and the value is the 
+    // position of that Descriptor in the topological sort
   	std::unordered_map<const Descriptor*, int> ordering;
+
+    const FileDescriptor* file;
+    int node_count;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageSorter);
 };

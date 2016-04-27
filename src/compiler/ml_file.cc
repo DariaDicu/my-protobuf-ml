@@ -49,7 +49,7 @@ namespace ml {
 FileGenerator::FileGenerator(const FileDescriptor* file) : file_(file) {
 	modulename_ = file->name();
 	MessageSorter sorter(file_);
-	message_order_ = sorter.GetOrdering();
+	message_order_ = sorter.get_ordering();
 	SortNestedTypes();
 }
 

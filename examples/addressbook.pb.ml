@@ -30,7 +30,7 @@ struct
       | 1 => HOME
       | 2 => WORK
       | 3 => UNKNOWN
-      | n => raise Exception(PARSE, "Attempting to parse enum of unknown tag value.")
+      | n => raise Exception(DECODE, "Attempting to parse enum of unknown tag value.")
     in
       (v, parse_result)
     end
@@ -67,7 +67,9 @@ sig
       val build : t -> parentType
     end where type parentType = t
     val encode : t -> Word8Vector.vector
+    val encodeToplevel : t -> Word8Vector.vector
     val decode : ByteInputStream.stream -> t * parseResult
+    val decodeToplevel : ByteInputStream.stream -> t * parseResult
   end
   type phoneNumber
   type t
@@ -102,7 +104,9 @@ sig
     val build : t -> parentType
   end where type parentType = t
   val encode : t -> Word8Vector.vector
+  val encodeToplevel : t -> Word8Vector.vector
   val decode : ByteInputStream.stream -> t * parseResult
+  val decodeToplevel : ByteInputStream.stream -> t * parseResult
 end
 
 structure Person : PERSON = 
@@ -122,7 +126,7 @@ struct
         val v = case e of 0 => MOBILE
         | 1 => HOME
         | 2 => WORK
-        | n => raise Exception(PARSE, "Attempting to parse enum of unknown tag value.")
+        | n => raise Exception(DECODE, "Attempting to parse enum of unknown tag value.")
       in
         (v, parse_result)
       end
@@ -166,22 +170,24 @@ struct
       }
       end
     end
-    fun encode m = 
+    fun encodeToplevel m = 
       let
         val number = (encodeOptional encodeString) (encodeKey(Tag(1), Code(2))) (#number m)
         val type_ = (encodeOptional PhoneType.encode) (encodeKey(Tag(2), Code(0))) (#type_ m)
       in
-        encodeMessage (Word8Vector.concat [
+        Word8Vector.concat [
           number,
           type_
-        ])
+        ]
       end
+
+    fun encode m = encodeMessage (encodeToplevel m)
 
     fun decodeNextField buff obj remaining = 
       if (remaining = 0) then
         (obj, buff)
       else if (remaining < 0) then
-        raise Exception(PARSE, "Field encoding does not match length in message header.")
+        raise Exception(DECODE, "Field encoding does not match length in message header.")
       else
         let
           val ((Tag(t), Code(c)), parse_result) = decodeKey buff
@@ -189,13 +195,15 @@ struct
           val remaining = remaining - keyByteCount
         in
           if (remaining <= 0) then
-            raise Exception(PARSE, "Not enough bytes left after parsing message field key.")
+            raise Exception(DECODE, "Not enough bytes left after parsing message field key.")
           else case (t) of 1 => decodeNextUnpacked (decodeString) (Builder.set_number) (decodeNextField) obj buff remaining
           | 2 => decodeNextUnpacked (PhoneType.decode) (Builder.set_type_) (decodeNextField) obj buff remaining
-          | n => raise Exception(PARSE, "Unknown field tag")
+          | n => raise Exception(DECODE, "Unknown field tag")
         end
 
-    fun decode buff = decodeFullHelper decodeNextField (Builder.build) (Builder.init ()) buff
+    fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+    fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
 
   end
   type phoneNumber = PhoneNumber.t
@@ -287,7 +295,7 @@ struct
     }
     end
   end
-  fun encode m = 
+  fun encodeToplevel m = 
     let
       val name = (encodeOptional encodeString) (encodeKey(Tag(1), Code(2))) (#name m)
       val id = (encodeOptional encodeBool) (encodeKey(Tag(2), Code(0))) (#id m)
@@ -296,21 +304,23 @@ struct
       val cnp = (encodePackedRepeated encodeInt32) (encodeKey(Tag(5), Code(2))) (#cnp m)
       val personal_number = (encodeOptional encodeBytes) (encodeKey(Tag(6), Code(2))) (#personal_number m)
     in
-      encodeMessage (Word8Vector.concat [
+      Word8Vector.concat [
         name,
         id,
         email,
         phones,
         cnp,
         personal_number
-      ])
+      ]
     end
+
+  fun encode m = encodeMessage (encodeToplevel m)
 
   fun decodeNextField buff obj remaining = 
     if (remaining = 0) then
       (obj, buff)
     else if (remaining < 0) then
-      raise Exception(PARSE, "Field encoding does not match length in message header.")
+      raise Exception(DECODE, "Field encoding does not match length in message header.")
     else
       let
         val ((Tag(t), Code(c)), parse_result) = decodeKey buff
@@ -318,7 +328,7 @@ struct
         val remaining = remaining - keyByteCount
       in
         if (remaining <= 0) then
-          raise Exception(PARSE, "Not enough bytes left after parsing message field key.")
+          raise Exception(DECODE, "Not enough bytes left after parsing message field key.")
         else case (t) of 1 => decodeNextUnpacked (decodeString) (Builder.set_name) (decodeNextField) obj buff remaining
         | 2 => decodeNextUnpacked (decodeBool) (Builder.set_id) (decodeNextField) obj buff remaining
         | 3 => decodeNextUnpacked (decodeString) (Builder.set_email) (decodeNextField) obj buff remaining
@@ -327,10 +337,12 @@ struct
         else (decodeNextUnpacked (decodeInt32) (Builder.add_cnp) (decodeNextField) obj buff remaining)
 
         | 6 => decodeNextUnpacked (decodeBytes) (Builder.set_personal_number) (decodeNextField) obj buff remaining
-        | n => raise Exception(PARSE, "Unknown field tag")
+        | n => raise Exception(DECODE, "Unknown field tag")
       end
 
-  fun decode buff = decodeFullHelper decodeNextField (Builder.build) (Builder.init ()) buff
+  fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+  fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
 
 end
 type person = Person.t
@@ -352,7 +364,9 @@ sig
     val build : t -> parentType
   end where type parentType = t
   val encode : t -> Word8Vector.vector
+  val encodeToplevel : t -> Word8Vector.vector
   val decode : ByteInputStream.stream -> t * parseResult
+  val decodeToplevel : ByteInputStream.stream -> t * parseResult
 end
 
 structure AddressBook : ADDRESSBOOK = 
@@ -389,20 +403,22 @@ struct
     }
     end
   end
-  fun encode m = 
+  fun encodeToplevel m = 
     let
       val people = (encodeRepeated Person.encode) (encodeKey(Tag(1), Code(2))) (#people m)
     in
-      encodeMessage (Word8Vector.concat [
+      Word8Vector.concat [
         people
-      ])
+      ]
     end
+
+  fun encode m = encodeMessage (encodeToplevel m)
 
   fun decodeNextField buff obj remaining = 
     if (remaining = 0) then
       (obj, buff)
     else if (remaining < 0) then
-      raise Exception(PARSE, "Field encoding does not match length in message header.")
+      raise Exception(DECODE, "Field encoding does not match length in message header.")
     else
       let
         val ((Tag(t), Code(c)), parse_result) = decodeKey buff
@@ -410,12 +426,14 @@ struct
         val remaining = remaining - keyByteCount
       in
         if (remaining <= 0) then
-          raise Exception(PARSE, "Not enough bytes left after parsing message field key.")
+          raise Exception(DECODE, "Not enough bytes left after parsing message field key.")
         else case (t) of 1 => decodeNextUnpacked (Person.decode) (Builder.add_people) (decodeNextField) obj buff remaining
-        | n => raise Exception(PARSE, "Unknown field tag")
+        | n => raise Exception(DECODE, "Unknown field tag")
       end
 
-  fun decode buff = decodeFullHelper decodeNextField (Builder.build) (Builder.init ()) buff
+  fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+  fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
 
 end
 type addressBook = AddressBook.t

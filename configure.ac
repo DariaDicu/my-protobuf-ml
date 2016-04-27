@@ -62,5 +62,5 @@ protobuf test program failed to link:
 perhaps you need to add -Llibdir to your LDFLAGS.])])
 LIBS="$pbc_savelibs"
 
-AC_CONFIG_FILES([Makefile src/compiler/Makefile])
+AC_CONFIG_FILES([Makefile src/compiler/Makefile tests/Makefile])
 AC_OUTPUT

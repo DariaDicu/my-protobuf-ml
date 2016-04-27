@@ -43,7 +43,6 @@ void readFloatingPointMessageFromFile() {
 	if (!floating_point_message.ParseFromIstream(&input)) {
 		cerr << "Failed to parse FullPrimitiveCollection instance from floating_point_message.dat\n";
 	}
-	cout << floating_point_message.my_double() << " is my double\n";
 }
 
 void serialize_simple_message_test() {
