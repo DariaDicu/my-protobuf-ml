@@ -40,3 +40,9 @@ Primitives message (WITH floats) deserialization ran in 2.292298
 
 Simple message: serialization = (1.006751+1.095205+1.175127)/3=1.092
 	deserialization = (0.964409+1.011555+0.9337)/3=0.969
+
+Primitive: (2.747+2.89+2.961)/3 = 2.866
+	(2.16+2.145+2.084)/3 = 2.129
+
+Floating point: (3.085+3.209+3.263)/3 = 3.185
+	(2.345+2.383+2.227)/3 = 2.318

@@ -1,10 +1,6 @@
-(* TODO: test float & double *)
-(* TODO: check width of encoding *)
-
 use "MlGenLib.ml";
 
 exception invalidTest
-
 
 (*Tests if encode-decode match for a given tuple of encode, decode functions.*)
 (*Works for equality types only.*)
@@ -47,6 +43,23 @@ fun test_serialization_bytes(enc_func, dec_func) bytes =
 						  else print ("Bytes encoding failed.\n")
 		; dec = bytes)
 	end
+
+(*Tests if encode-decode match doubles/floats.
+  For floating points, the expected value must be passed explicitly, as ML does
+  not have 32-bit precision (for floats), but the encoding process removes
+  some precision as it restricts the precision to either 32- or 64- bit 
+  depending on the value type. *)
+(* Values for next representable are the cast of float to double precision  from 
+http://www.h-schmidt.net/FloatConverter/IEEE754.html *)
+
+fun test_serialization_doubles(enc_func, dec_func) v expected = 
+  let val enc = enc_func v
+    val istream = ByteInputStream.fromVector enc
+    val (dec, parse_result) = dec_func istream
+  in
+      (print ("Expected " ^ Real.toString(expected) ^ ", decoded " ^ Real.toString(dec) ^ "\n")
+    ; Real.==(dec, expected))
+  end
 
 (*Tests that running encode-decode raises an exception.*)
 fun test_serialization_expect_exception (enc_func, dec_func) v =
@@ -131,9 +144,14 @@ fun test 0 = test_serialization (encodeInt32, decodeInt32) 332323
   | test 61 = test_serialization_bytes (encodeBytes, decodeBytes) (Word8Vector.fromList [0wx21,0wx2,0wx32,0wxFF,0wx0,0wxFA])
 
   | test 62 = test_serialization_expect_exception (encodeUint32, decodeUint32) 1239239233232932
+
+  | test 63 = test_serialization_doubles (encodeFloat, decodeFloat) ~112.11 ~112.11000061035156
+  | test 64 = test_serialization_doubles (encodeFloat, decodeFloat) 21818.1221 21818.123046875
+  | test 65 = test_serialization_doubles (encodeDouble, decodeDouble) 0.0 0.0
+  | test 66 = test_serialization_doubles (encodeDouble, decodeDouble) 2121212.91292 2121212.91292
   | test n = raise invalidTest
 
-val lastTest = 62;
+val lastTest = 66;
 
 (* use "primitive_test.ml"; runTests(); *)
 fun runTests () = 

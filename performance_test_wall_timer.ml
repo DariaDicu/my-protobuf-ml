@@ -1,7 +1,5 @@
 use "benchmarks/simple_message.pb.ml";
 use "benchmarks/primitives.pb.ml";
-use "MlGenLib.ml";
-
 
 val timer = ref (Timer.totalRealTimer ());
 
@@ -212,4 +210,6 @@ let
 	fun run i = if i <= lastTest then (test i; run (i+1)) else ()
 in
 	run 0
-end
+end;
+
+fun main() = runTests ();

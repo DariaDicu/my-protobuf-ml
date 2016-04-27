@@ -1,5 +1,5 @@
 /* 
-	g++ -I /usr/local/include -L /usr/local/lib performance_test.cpp simple_message.pb.cc -lprotobuf -pthread
+	g++ -I /usr/local/include -L /usr/local/lib performance_test.cpp simple_message.pb.cc primitives.pb.cc -lprotobuf -pthread
 */
 
 #include <iostream>
