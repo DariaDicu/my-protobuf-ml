@@ -107,7 +107,8 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_protoc_gen_ml_OBJECTS = main.$(OBJEXT) ml_enum.$(OBJEXT) \
 	ml_file.$(OBJEXT) ml_generator.$(OBJEXT) ml_helpers.$(OBJEXT) \
-	ml_ordering.$(OBJEXT) ml_message.$(OBJEXT)
+	ml_ordering.$(OBJEXT) ml_message.$(OBJEXT) \
+	graph_builder.$(OBJEXT)
 protoc_gen_ml_OBJECTS = $(am_protoc_gen_ml_OBJECTS)
 protoc_gen_ml_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_$(V))
@@ -316,7 +317,8 @@ protoc_gen_ml_SOURCES = \
 	ml_generator.cc			\
 	ml_helpers.cc			\
 	ml_ordering.cc			\
-	ml_message.cc
+	ml_message.cc			\
+	graph_builder.cc
 
 all: all-am
 
@@ -411,6 +413,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+include ./$(DEPDIR)/graph_builder.Po
 include ./$(DEPDIR)/main.Po
 include ./$(DEPDIR)/ml_enum.Po
 include ./$(DEPDIR)/ml_file.Po

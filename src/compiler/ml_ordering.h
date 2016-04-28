@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <stack>
 #include <vector>
+#include "graph_builder.h"
 #include "google/protobuf/stubs/strutil.h"
 #include <unordered_map>
 #include <google/protobuf/descriptor.pb.h>
@@ -50,13 +51,6 @@ class MessageSorter {
     // Performs the DFS for cycle detection and topological sort.
   	void topological_traversal(const Descriptor* node);
 
-    // Returns a list of message names representing all the unresolved 
-    // references in the subtree, and builds the dependency graph for the 
-    // subtree rooted at "node". A reference of a node x to a message M is 
-    // unresolved if no node or sibling of a node on the path from the
-    // subtree root to node x has the name M.
-	  std::set<string> get_unresolved_references(const Descriptor *node);
-
     // Performs a topological sorting and places the result in the "ordering"
     // member, which is an unordered map where the key is a Descriptor and the 
     // value is the position of that Descriptor in the topological sort.
@@ -85,6 +79,7 @@ class MessageSorter {
   	std::unordered_map<const Descriptor*, int> ordering;
 
     const FileDescriptor* file;
+    GraphBuilder graph_builder;
     int node_count;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageSorter);

@@ -106,11 +106,17 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am_topological_sort_test_OBJECTS = topological_sort_test.$(OBJEXT)
 topological_sort_test_OBJECTS = $(am_topological_sort_test_OBJECTS)
-topological_sort_test_LDADD = $(LDADD)
+topological_sort_test_DEPENDENCIES =  \
+	$(top_builddir)/src/compiler/ml_ordering.o \
+	$(top_builddir)/src/compiler/graph_builder.o
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+topological_sort_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(topological_sort_test_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -299,6 +305,10 @@ top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
 topological_sort_test_SOURCES = topological_sort_test.cpp
+topological_sort_test_LDFLAGS = -lprotobuf -lprotoc
+topological_sort_test_LDADD = $(top_builddir)/src/compiler/ml_ordering.o \
+							  $(top_builddir)/src/compiler/graph_builder.o
+
 all: all-am
 
 .SUFFIXES:
@@ -344,7 +354,7 @@ clean-checkPROGRAMS:
 
 topological_sort_test$(EXEEXT): $(topological_sort_test_OBJECTS) $(topological_sort_test_DEPENDENCIES) $(EXTRA_topological_sort_test_DEPENDENCIES) 
 	@rm -f topological_sort_test$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(topological_sort_test_OBJECTS) $(topological_sort_test_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(topological_sort_test_LINK) $(topological_sort_test_OBJECTS) $(topological_sort_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

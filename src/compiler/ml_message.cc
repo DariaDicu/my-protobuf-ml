@@ -350,7 +350,9 @@ namespace ml {
 			}
 		}
 		// Raise exception for unknown tag. TODO: skip based on wire type, length.
-		printer->Print("\n| n => raise Exception(DECODE, \"Unknown field tag\")\n");
+		printer->Print("\n");
+		if (descriptor_->field_count() > 0) printer->Print("|");
+		printer->Print(" n => raise Exception(DECODE, \"Unknown field tag\")\n");
 		printer->Outdent();
 		printer->Print("end\n\n");
 		printer->Outdent();

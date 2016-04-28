@@ -12,7 +12,9 @@ sig
     val build : t -> parentType
   end where type parentType = t
   val encode : t -> Word8Vector.vector
+  val encodeToplevel : t -> Word8Vector.vector
   val decode : ByteInputStream.stream -> t * parseResult
+  val decodeToplevel : ByteInputStream.stream -> t * parseResult
 end
 
 structure M3 : M3 = 
@@ -33,13 +35,15 @@ struct
     }
     end
   end
-  fun encode m = 
+  fun encodeToplevel m = 
     let
     in
-      encodeMessage (Word8Vector.concat [
+      Word8Vector.concat [
 
-      ])
+      ]
     end
+
+  fun encode m = encodeMessage (encodeToplevel m)
 
   fun decodeNextField buff obj remaining = 
     if (remaining = 0) then
@@ -55,10 +59,12 @@ struct
         if (remaining <= 0) then
           raise Exception(DECODE, "Not enough bytes left after parsing message field key.")
         else case (t) of 
-        | n => raise Exception(DECODE, "Unknown field tag")
+        n => raise Exception(DECODE, "Unknown field tag")
       end
 
-  fun decode buff = decodeFullHelper decodeNextField (Builder.build) (Builder.init ()) buff
+  fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+  fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
 
 end
 type m3 = M3.t
@@ -78,7 +84,9 @@ sig
     val build : t -> parentType
   end where type parentType = t
   val encode : t -> Word8Vector.vector
+  val encodeToplevel : t -> Word8Vector.vector
   val decode : ByteInputStream.stream -> t * parseResult
+  val decodeToplevel : ByteInputStream.stream -> t * parseResult
 end
 
 structure M4 : M4 = 
@@ -109,14 +117,16 @@ struct
     }
     end
   end
-  fun encode m = 
+  fun encodeToplevel m = 
     let
       val message3 = (encodeOptional M3.encode) (encodeKey(Tag(1), Code(2))) (#message3 m)
     in
-      encodeMessage (Word8Vector.concat [
+      Word8Vector.concat [
         message3
-      ])
+      ]
     end
+
+  fun encode m = encodeMessage (encodeToplevel m)
 
   fun decodeNextField buff obj remaining = 
     if (remaining = 0) then
@@ -135,7 +145,9 @@ struct
         | n => raise Exception(DECODE, "Unknown field tag")
       end
 
-  fun decode buff = decodeFullHelper decodeNextField (Builder.build) (Builder.init ()) buff
+  fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+  fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
 
 end
 type m4 = M4.t
@@ -156,7 +168,9 @@ sig
       val build : t -> parentType
     end where type parentType = t
     val encode : t -> Word8Vector.vector
+    val encodeToplevel : t -> Word8Vector.vector
     val decode : ByteInputStream.stream -> t * parseResult
+    val decodeToplevel : ByteInputStream.stream -> t * parseResult
   end
   type m1
   structure M2 : sig
@@ -173,7 +187,9 @@ sig
       val build : t -> parentType
     end where type parentType = t
     val encode : t -> Word8Vector.vector
+    val encodeToplevel : t -> Word8Vector.vector
     val decode : ByteInputStream.stream -> t * parseResult
+    val decodeToplevel : ByteInputStream.stream -> t * parseResult
   end
   type m2
   type t
@@ -189,7 +205,9 @@ sig
     val build : t -> parentType
   end where type parentType = t
   val encode : t -> Word8Vector.vector
+  val encodeToplevel : t -> Word8Vector.vector
   val decode : ByteInputStream.stream -> t * parseResult
+  val decodeToplevel : ByteInputStream.stream -> t * parseResult
 end
 
 structure M1 : M1 = 
@@ -222,14 +240,16 @@ struct
       }
       end
     end
-    fun encode m = 
+    fun encodeToplevel m = 
       let
         val message3 = (encodeOptional M3.encode) (encodeKey(Tag(1), Code(2))) (#message3 m)
       in
-        encodeMessage (Word8Vector.concat [
+        Word8Vector.concat [
           message3
-        ])
+        ]
       end
+
+    fun encode m = encodeMessage (encodeToplevel m)
 
     fun decodeNextField buff obj remaining = 
       if (remaining = 0) then
@@ -248,7 +268,9 @@ struct
           | n => raise Exception(DECODE, "Unknown field tag")
         end
 
-    fun decode buff = decodeFullHelper decodeNextField (Builder.build) (Builder.init ()) buff
+    fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+    fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
 
   end
   type m1 = M1.t
@@ -280,14 +302,16 @@ struct
       }
       end
     end
-    fun encode m = 
+    fun encodeToplevel m = 
       let
         val message1 = (encodeOptional M1.encode) (encodeKey(Tag(1), Code(2))) (#message1 m)
       in
-        encodeMessage (Word8Vector.concat [
+        Word8Vector.concat [
           message1
-        ])
+        ]
       end
+
+    fun encode m = encodeMessage (encodeToplevel m)
 
     fun decodeNextField buff obj remaining = 
       if (remaining = 0) then
@@ -306,7 +330,9 @@ struct
           | n => raise Exception(DECODE, "Unknown field tag")
         end
 
-    fun decode buff = decodeFullHelper decodeNextField (Builder.build) (Builder.init ()) buff
+    fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+    fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
 
   end
   type m2 = M2.t
@@ -336,14 +362,16 @@ struct
     }
     end
   end
-  fun encode m = 
+  fun encodeToplevel m = 
     let
       val message5 = (encodeOptional M4.encode) (encodeKey(Tag(1), Code(2))) (#message5 m)
     in
-      encodeMessage (Word8Vector.concat [
+      Word8Vector.concat [
         message5
-      ])
+      ]
     end
+
+  fun encode m = encodeMessage (encodeToplevel m)
 
   fun decodeNextField buff obj remaining = 
     if (remaining = 0) then
@@ -362,7 +390,9 @@ struct
         | n => raise Exception(DECODE, "Unknown field tag")
       end
 
-  fun decode buff = decodeFullHelper decodeNextField (Builder.build) (Builder.init ()) buff
+  fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+  fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
 
 end
 type m1 = M1.t
