@@ -16,6 +16,22 @@ using namespace google::protobuf::compiler::ml;
 DescriptorPool* pool;
 int next_unique_suffix = 0;
 
+// Returns a completely unconnected graph of size n.
+vector<vector<int> > buildFlatGraph(int n) {
+	vector<vector<int> > RG(n, vector<int>());
+	return RG;
+}
+
+// Returns (the inverse of) a graph of size n where nodes are connected as a 
+// chain (acyclic).
+vector<vector<int> > buildChainGraph(int n) {
+	vector<vector<int> > RG(n, vector<int>());
+	for (int i = 1; i < n; i++) {
+		RG[i].push_back(i-1);
+	}
+	return RG;
+}
+
 // Returns the *inverse* graph for a binary tree (i.e. entry i in the vector is 
 // the list of "parent" nodes for node i).
 vector<vector<int> > buildBinaryTree(int n) {
@@ -23,6 +39,29 @@ vector<vector<int> > buildBinaryTree(int n) {
 	for (int i = 1; i < n; i++) {
 		// The only parent for each node is a single node with index (i-1)/2.
 		RG[i].push_back((i-1)/2);
+	}
+	return RG;
+}
+
+// Returns the *inverse* graph for an inverse binary tree (i.e. entry i in the 
+// vector is he list of "parent" nodes for node i), which has root n (not 0).
+vector<vector<int> > buildInverseBinaryTree(int n) {
+	vector<vector<int> > RG(n, vector<int>());
+	for (int i = 1; i < n; i++) {
+		// The only parent for each node is a single node with index (i-1)/2.
+		RG[n-1-i].push_back(n-1-((i-1)/2));
+	}
+	return RG;
+}
+
+vector<vector<int> > buildRandomTree(int n) {
+	// Build a random tree rooted at 0.
+	vector<vector<int> > RG(n, vector<int>());
+	srand(time(NULL));
+	for (int i = 1; i < n; i++) {
+		// Pick a node in interval [0,i).
+		int parent = rand() % i;
+		RG[i].push_back(parent);
 	}
 	return RG;
 }
@@ -77,8 +116,7 @@ void run_test(const FileDescriptor* file) {
     	std::chrono::high_resolution_clock::now();
     long long duration = 
     	std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
-    cout << "Topological sort of binary tree with root 0 ran in " << duration 
-    	 << " ms\n";
+    cout << "------topological ran in " << duration << " ms\n";
 
     start = std::chrono::high_resolution_clock::now();
 	GraphBuilder graph_builder(file);
@@ -91,30 +129,58 @@ void run_test(const FileDescriptor* file) {
     duration = std::chrono::duration_cast<std::chrono::milliseconds>
     	(finish - start).count();
     cout << "------out of which building the dependency graph takes " 
-         << duration << " ms\n";
+    	 << duration << " ms\n";
+}
+
+void flatGraphTest() {
+	vector<vector<int> > flat_graph = buildFlatGraph(10000);
+	const FileDescriptor* file = buildDescriptorGraph(10000, &flat_graph);
+	cout << "Running test for completely disconnected graph.\n";
+	run_test(file);
+}
+
+void chainGraphTest() {
+	vector<vector<int> > chain_graph = buildChainGraph(10000);
+	const FileDescriptor* file = buildDescriptorGraph(10000, &chain_graph);
+	cout << "Running test for chain graph.\n";
+	run_test(file);
 }
 
 // Builds a binary tree with normal order of edges {0, 1, 2, 3, ..., n-1} (0 is
 // the root).
 void binaryTreeTest() {
+	// TODO: average over 10 runs.
 	vector<vector<int> > binary_tree = buildBinaryTree(10000);
 	const FileDescriptor* file = buildDescriptorGraph(10000, &binary_tree);
+	cout << "Running test for binary tree graph, nodes in order 0, 1, 2, ...\n";
 	run_test(file);
-	
+}
 
+void randomTreeTest() {
+	// TODO: average over 10 runs.
+	vector<vector<int> > random_tree = buildRandomTree(10000);
+	const FileDescriptor* file = buildDescriptorGraph(10000, &random_tree);
+	cout << "Running test for random tree rooted at 0\n";
+	run_test(file);
+}
 
-
-	/*
-	cout << fd->message_type(5)->name() << "\n";
-	cout << fd->message_type(5)->field(0)->message_type()->name() << "\n";
-	cout << fd->message_type(5)->name() << "\n";
-	cout << fd->message_type(6)->field(0)->message_type()->name() << "\n";
-	*/
+// Builds a binary tree with normal order of edges {0, 1, 2, 3, ..., n-1} (0 is
+// the root).
+void inverseBinaryTreeTest() {
+	// TODO: average over 10 runs.
+	vector<vector<int> > binary_tree = buildInverseBinaryTree(10000);
+	const FileDescriptor* file = buildDescriptorGraph(10000, &binary_tree);
+	cout << "Running test for binary tree graph, nodes in order n, n-1 ...\n";
+	run_test(file);
 }
 
 int main() {
 	pool = new DescriptorPool();
+	flatGraphTest();
+	chainGraphTest();
 	binaryTreeTest();
+	inverseBinaryTreeTest();
+	randomTreeTest();
 	delete pool;
 	return 0;
 }
