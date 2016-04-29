@@ -42,13 +42,11 @@ class MessageSorter {
 
     // Visits all Descriptors accessible from the FileDescriptor and associates
     // an unique integer in the range [0, total_descriptor_count) to each
-    // Descriptor, then stores it into index_map_.
+    // Descriptor, then stores it into index_map_. The visit is performed using
+    // an iterative DFS that simulates the stack (to avoid stack overflow).
 	  void index_nodes();
 
-    // Depth first search traversal used by index_nodes (see above).
-    void index_nodes_traversal(const Descriptor* node);
-
-    // Performs the DFS for cycle detection and topological sort.
+    // Performs an iterative DFS for cycle detection and topological sort.
   	void topological_traversal(const Descriptor* node);
 
     // Performs a topological sorting and places the result in the "ordering"
@@ -58,25 +56,26 @@ class MessageSorter {
 
   	// Boolean vectors used for keeping track of visited and marked nodes in the
     // topological sort depth first search.
-  	vector<bool> visited;
-  	vector<bool> in_stack;
+  	vector<bool>* visited;
+  	vector<bool>* in_stack;
 
     // Stack used in the topological sort depth first search to place nodes
     // after having visited all their neighbours. At the end of the sort, the 
     // stack contains the topological ordering.
-  	std::stack<const Descriptor*> stack;
+  	std::stack<const Descriptor*>* stack;
 
     // Adjacency list for the reference graph on which topological sort is 
     // performed.
-  	std::unordered_map<const Descriptor*, vector<const Descriptor*> > adjacency_list;
+  	std::unordered_map<const Descriptor*, vector<const Descriptor*> >* 
+      adjacency_list;
 
     // A map that contains an unique integer in the range 
     // [0, total_descriptor_count) for each message Descriptor in the file.
-  	std::unordered_map<const Descriptor*, int> index_map;
+  	std::unordered_map<const Descriptor*, int>* index_map;
 
     // An unordered map where the key is a Descriptor and the value is the 
     // position of that Descriptor in the topological sort
-  	std::unordered_map<const Descriptor*, int> ordering;
+  	std::unordered_map<const Descriptor*, int>* ordering;
 
     const FileDescriptor* file;
     GraphBuilder graph_builder;

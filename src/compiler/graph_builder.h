@@ -31,7 +31,7 @@ class GraphBuilder {
 
     // Returns adjacency list if not empty, otherwise calls 
     // rebuild_dependency_graph and then returns the adjacency list.
-    std::unordered_map<const Descriptor*, vector<const Descriptor*> > 
+    std::unordered_map<const Descriptor*, vector<const Descriptor*> >* 
       get_adjacency_list();
 
     // Builds the dependency graph for all reachable descriptor nodes from the
@@ -49,7 +49,7 @@ class GraphBuilder {
 
     // Adjacency list for the reference graph (on which topological sort can be
     // performed).
-  	std::unordered_map<const Descriptor*, vector<const Descriptor*> > 
+  	std::unordered_map<const Descriptor*, vector<const Descriptor*> >*
       adjacency_list;
 
     const FileDescriptor* file;

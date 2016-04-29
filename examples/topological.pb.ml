@@ -59,7 +59,7 @@ struct
         if (remaining <= 0) then
           raise Exception(DECODE, "Not enough bytes left after parsing message field key.")
         else case (t) of 
-        n => raise Exception(DECODE, "Unknown field tag")
+         n => raise Exception(DECODE, "Unknown field tag")
       end
 
   fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
