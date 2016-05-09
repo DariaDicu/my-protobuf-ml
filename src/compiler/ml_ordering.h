@@ -45,9 +45,6 @@ class MessageSorter {
     // Descriptor, then stores it into index_map_.
 	  void index_nodes();
 
-    // Depth first search traversal used by index_nodes (see above).
-    void index_nodes_traversal(const Descriptor* node);
-
     // Performs the DFS for cycle detection and topological sort.
   	void topological_traversal(const Descriptor* node);
 

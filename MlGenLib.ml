@@ -230,6 +230,31 @@ end
 
 (* Encodes a single Word.word as a varint. *)
 (* Least significant BYTES first, but within byte it's big endian. *)
+
+fun encodeVarint v = 
+let 
+	fun encodeIteration v =
+	let
+		(* Function toWord8 extracts the last byte from an integer.*)
+		fun toWord8 x = Word8.fromInt (LargeWord.toInt x)
+
+		val last7bits = LargeWord.andb (v, 0wx7F)
+		val remaining_bits = LargeWord.>>(v, 0wx7)
+
+		(* Add the MSB depending on whether this is the last byte (0) or not (1).*)
+		val byte_value = if (remaining_bits = 0wx0) then last7bits
+			else LargeWord.orb(last7bits, 0wx80)
+	in
+		if (remaining_bits <> 0wx0) then 
+			(toWord8 byte_value)::(encodeIteration remaining_bits)
+		else
+			[toWord8 byte_value]
+	end
+in
+	Word8Vector.fromList (encodeIteration (LargeWord.fromInt v))
+end
+
+(* Removed and replaced with cleaner version.
 fun encodeVarint n = 
 let 
 	fun encodeVarint_core v =
@@ -251,6 +276,7 @@ let
 in
 	Word8Vector.fromList (encodeVarint_core (LargeWord.fromInt n))
 end
+*)
 
 (* Returns a Word8Vector *)
 fun encodeZigZag value = 

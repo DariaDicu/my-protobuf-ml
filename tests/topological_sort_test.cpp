@@ -110,7 +110,7 @@ void buildBranchedDescriptorGraph_recursive(google::protobuf::DescriptorProto*
 	d->set_name("Node"+std::to_string(i)+unique_prefix);
 
 	for (int child = 1; child <= 10; child++) 
-		if (10*i + child <= n) {
+		if (10*i + child < n) {
 			buildBranchedDescriptorGraph_recursive(d->add_nested_type(), 
 				10*i + child, n, possible_references);
 			(*possible_references).push_back(10*i + child);
@@ -118,14 +118,14 @@ void buildBranchedDescriptorGraph_recursive(google::protobuf::DescriptorProto*
 
 	// Push all children off the stack.
 	for (int child = 1; child <= 10; child++) 
-		if (10*i + child <= n) {
+		if (10*i + child < n) {
 			(*possible_references).pop_back();
 		}
 
 	// It may be the case that there are no possible references.
 	if (possible_references->size() == 0) return;
 	
-	for (int f = 1; f <= 10; f++) {
+	for (int f = 1; f <= 1; f++) {
 		int index = rand()%(possible_references->size());
 		int reference = (*possible_references)[index];
 
@@ -271,6 +271,7 @@ void run_test_for_plot(const FileDescriptor* file, int n, fstream* output) {
 	    summed_duration += duration;
 	}
 	*output << n << " " << (summed_duration/3) << "\n";
+	output->flush();
 	cout << n << " ok\n";
 	/*
     summed_duration = 0;
@@ -293,112 +294,95 @@ void run_test_for_plot(const FileDescriptor* file, int n, fstream* output) {
 }
 
 // TEST CASE I. 1 level nested type tree; disconnected dependency graph.
-void type1Test() {
-	vector<vector<int> > flat_graph = buildFlatGraph(10000);
-	const FileDescriptor* file = buildOneLevelDescriptorGraph(10000,
-		&flat_graph);
+void type1Test(int n) {
+	vector<vector<int> > flat_graph = buildFlatGraph(n);
+	const FileDescriptor* file = buildOneLevelDescriptorGraph(n, &flat_graph);
 	cout << "Running test for type 1 topology.\n";
 	// run_test(file);
 	// Running to plot graph
-	fstream output("plots/type1_plot.txt", ios::out | ios::trunc);
-	for (int n = 0; n <= 1500000; n+=100000) {
-		flat_graph = buildFlatGraph(n);
-		file = buildOneLevelDescriptorGraph(n, &flat_graph);
-		run_test_for_plot(file, n, &output);
-	}
+	fstream output("plots/type1_plot.txt", ios::out | ios::app);
+	run_test_for_plot(file, n, &output);
 }
 
 // TEST CASE II. 1 level nested type tree; binary dependency graph.
-void type2Test() {
-	vector<vector<int> > binary_tree = buildBinaryTree(1000000);
-	const FileDescriptor* file = buildOneLevelDescriptorGraph(1000000, 
-		&binary_tree);
+void type2Test(int n) {
+	vector<vector<int> > binary_tree = buildBinaryTree(n);
+	const FileDescriptor* file =  buildOneLevelDescriptorGraph(n, &binary_tree);
+
+	fstream output("plots/type2_plot.txt", ios::out | ios::app);
 	cout << "Running test for type 2 topology.\n";
-	run_test(file);
-	// Running to plot graph
-	/*
-	fstream output("plots/type2_plot.txt", ios::out | ios::trunc);
-	for (int n = 0; n <= 1500000; n+=100000) {
-		binary_tree = buildBinaryTree(n);
-		file = buildOneLevelDescriptorGraph(n, &binary_tree);
-		run_test_for_plot(file, n, &output);
-	}
-	*/
+	run_test_for_plot(file, n, &output);
 }
 
 // TEST CASE III. 1 level nested type tree; chain dependency graph.
-void type3Test() {
-	vector<vector<int> > chain_graph = buildChainGraph(1000);
-	const FileDescriptor* file = buildOneLevelDescriptorGraph(1000, 
-		&chain_graph);
+void type3Test(int n) {
+	vector<vector<int> > chain_graph = buildChainGraph(n);
+	const FileDescriptor* file = buildOneLevelDescriptorGraph(n, &chain_graph);
 	cout << "Running test for type 3 topology.\n";
 	//run_test(file);
 	// Running to plot graph
-	
-	fstream output("plots/type3_plot.txt", ios::out | ios::trunc);
-	for (int n = 0; n <= 50000; n+=1000) {
-		chain_graph = buildChainGraph(n);
-		file = buildOneLevelDescriptorGraph(n, &chain_graph);
-		//cout << n << " is ok\n";
-		run_test_for_plot(file, n, &output);
-	}
+
+	fstream output("plots/type3_plot.txt", ios::out | ios::app);
+	run_test_for_plot(file, n, &output);
 }
 
 // TEST CASE IV. 1 level nested type tree; random (DAG) dependency graph.
-void type4Test() {
-	vector<vector<int> > random_tree = buildRandomTree(10000);
-	const FileDescriptor* file = buildOneLevelDescriptorGraph(10000, 
-		&random_tree);
+void type4Test(int n) {
+	vector<vector<int> > random_tree = buildRandomTree(n);
+	const FileDescriptor* file = buildOneLevelDescriptorGraph(n, &random_tree);
 	cout << "Running test for type 4 topology.\n";
 	//run_test(file);
 
 	// Running to plot graph
-	fstream output("plots/type4_plot.txt", ios::out | ios::trunc);
-	for (int n = 0; n <= 1500000; n+=100000) {
-		random_tree = buildRandomTree(n);
-		file = buildOneLevelDescriptorGraph(n, &random_tree);
-		run_test_for_plot(file, n, &output);
-	}
+	fstream output("plots/type4_plot.txt", ios::out | ios::app);
+	run_test_for_plot(file, n, &output);
 }
 
 // TEST CASE V. chain nested type tree; (almost) disconnected dependency graph.
-void type5Test() {
-	const FileDescriptor* file = buildChainDescriptorGraph(2000);
+void type5Test(int n) {
+	const FileDescriptor* file = buildChainDescriptorGraph(n);
 	cout << "Running test for type 5 topology.\n";
 	//run_test(file);
 
-	fstream output("plots/type5_plot.txt", ios::out | ios::trunc);
-	for (int n = 10; n <= 2000; n+=10) {
-		file = buildChainDescriptorGraph(n);
-		run_test_for_plot(file, n, &output);
-		//cout << n << " ok\n";
-	}
+	fstream output("plots/type5_plot.txt", ios::out | ios::app);
+	run_test_for_plot(file, n, &output);
 }
 
 // TEST CASE VI. branch factor 10 nested type tree; 
-void type6Test() {
-	srand(time(NULL));
-	const FileDescriptor* file = buildBranchedDescriptorGraph(50);
+void type6Test(int n) {
+	const FileDescriptor* file = buildBranchedDescriptorGraph(n);
 	cout << "Running test for type 6 topology.\n";
 	//run_test(file);
-
-	fstream output("plots/type6_plot.txt", ios::out | ios::trunc);
-	for (int n = 0; n <= 100000; n+=1000) {
-		file = buildBranchedDescriptorGraph(n);
-		run_test_for_plot(file, n, &output);
-		//cout << n << " ok\n";
-	}
+	fstream output("plots/type6_plot.txt", ios::out | ios::app);
+	file = buildBranchedDescriptorGraph(n);
+	run_test_for_plot(file, n, &output);
 }
 
-int main() {
+int main(int argc, char** argv) {
+	if (argc != 3) {
+		cout << "Not enough/too many arguments. Aborting.\n";
+		return 0;
+	}
+	int t = atoi(argv[1]);
+	int n = atoi(argv[2]);
+
 	pool = new DescriptorPool();
-	
-	//type1Test();
-	type2Test();
-	//type3Test();
-	//type4Test();
-	//type5Test();
-	//type6Test();
+	switch (t) {
+		case 1:
+			type1Test(n); break;
+		case 2:
+			type2Test(n); break;
+		case 3:
+			type3Test(n); break;
+		case 4:
+			type4Test(n); break;
+		case 5:
+			type5Test(n); break;
+		case 6:
+			type6Test(n); break;
+		default:
+			cout << "Unknown test\n";
+	}
 	delete pool;
 	return 0;
 }

@@ -1,4 +1,4 @@
-syntax = "proto3";
+syntax = "proto2";
 
 message SmallPrimitiveCollection {
 	int32 my_int32 = 1;

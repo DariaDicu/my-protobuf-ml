@@ -6,7 +6,7 @@ using namespace std;
 ofstream fo("nested_depth.proto", ios::trunc);
 
 void recurse(int level) {
-	if (level > 10000) return;
+	if (level > 5000) return;
 	fo << "message M" << level << " {\n";
 	recurse(level+1);
 	fo << "}\n";

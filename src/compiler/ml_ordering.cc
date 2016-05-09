@@ -26,20 +26,28 @@ int MessageSorter::get_index(const Descriptor* node) {
 }
 
 void MessageSorter::index_nodes() {
+	// Simulate a DFS stack to avoid stack overflow for large collections.
+	std::stack<const Descriptor*> dfs_stack;
+
 	for (int i = 0; i < file->message_type_count(); i++) {
-		index_nodes_traversal(file->message_type(i));
+		dfs_stack.push(file->message_type(i));
 	}
-}
 
-void MessageSorter::index_nodes_traversal(const Descriptor* node) {
-  if (index_map.find(node) != index_map.end()) {
-  	return;
-  }
-  index_map[node] = ++node_count;
+	while (!dfs_stack.empty()) {
+		const Descriptor* node = dfs_stack.top();
+		dfs_stack.pop();
 
-  for (int i = 0; i < node->nested_type_count(); i++) {
-  	index_nodes_traversal(node->nested_type(i));
-  }
+		// If node has been visited, continue.
+		if (index_map.find(node) != index_map.end()) {
+  			continue;
+  		}
+
+  		index_map[node] = ++node_count;
+
+		for (int i = 0; i < node->nested_type_count(); i++) {
+			dfs_stack.push(node->nested_type(i));
+		}
+	}
 }
 
 void MessageSorter::sort() {
@@ -70,26 +78,39 @@ void MessageSorter::sort() {
 }
 
 void MessageSorter::topological_traversal(const Descriptor* node) {
-  int x = get_index(node);
-  visited[x] = true;
-  in_stack[x] = true;
+	// Simulate a DFS stack to avoid stack overflow for large collections.
+	std::stack<const Descriptor*> dfs_stack;
 
-  // Loop through all Descriptors adjacent to node. 
-  for (int i = 0; i < adjacency_list[node].size(); i++) {
-  	int y = get_index(adjacency_list[node][i]);
-  	if (in_stack[y]) {
-  		GOOGLE_LOG(FATAL) << "Error: cycle detected in definition file. ML "
-  		"generator does not suport mutually recursive or recursive types. "
-  		"No code will be generated.";
-  	}
-  	if (!visited[y]) {
-  		topological_traversal(adjacency_list[node][i]);
-  	}
-  }
-  in_stack[x] = false;
+	dfs_stack.push(node);
 
-  // Push node onto the stack that will determine the topological ordering.
-  stack.push(node);
+	while (!dfs_stack.empty()) {
+		const Descriptor* node = dfs_stack.top();
+		int x = get_index(node);
+
+		// Check if we have finished visiting all neighbours of the node.
+		if (in_stack[x]) {
+			in_stack[x] = false;
+			dfs_stack.pop();
+			// Push on final stack that represents topological ordering.
+			stack.push(node);
+			continue;
+		}
+
+		visited[x] = true;
+		in_stack[x] = true;
+
+		for (int i = 0; i < adjacency_list[node].size(); i++) {
+			int y = get_index(adjacency_list[node][i]);
+			if (in_stack[y]) {
+				GOOGLE_LOG(FATAL) << "Error: cycle detected in definition file. ML "
+				"generator does not suport mutually recursive or recursive types. "
+				"No code will be generated.";
+			}
+			if (!visited[y]) {
+				dfs_stack.push(adjacency_list[node][i]);
+			}
+		}
+	}
 }
 
 std::unordered_map<const Descriptor*, int> MessageSorter::get_ordering() {

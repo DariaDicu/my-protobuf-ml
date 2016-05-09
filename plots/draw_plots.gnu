@@ -13,7 +13,7 @@ plot "plots/type1_plot.txt" using 1:($2/1000000.) with lines
 
 # Type 2
 set output 'plots/type2_plot.eps'
-plot "plots/type2_plot.txt" using 1:($2/1000000.) with lines
+plot "plots/type2_plot_FINAL.txt" using 1:($2/1000000.) with lines
 
 # Type 3
 set output 'plots/type3_plot.eps'
