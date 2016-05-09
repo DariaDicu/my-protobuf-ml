@@ -1,7 +1,7 @@
 #!/bin/bash
 #Script for running tests for topological sort. Used so that each sort is a new 
 #process, making sure memory allocated for building the FileDescriptors are 
-#freed.
+#deallocated.
 
 #Type 1
 for i in `seq 1 15`;
