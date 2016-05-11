@@ -27,7 +27,6 @@ class MessageGenerator {
   void GenerateSignature(io::Printer* printer, bool toplevel);
   void GenerateStructure(io::Printer* printer, bool toplevel);
 
-  // TODO: Extract this in BuilderGenerator class.
   void GenerateBuilderSignature(io::Printer* printer);
   void GenerateBuilderStructure(io::Printer* printer);
 

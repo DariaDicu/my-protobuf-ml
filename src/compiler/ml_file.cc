@@ -45,7 +45,6 @@ namespace protobuf {
 namespace compiler {
 namespace ml {
 
-// TODO(dicu): module name here should be resolved in case of conflicts.
 FileGenerator::FileGenerator(const FileDescriptor* file) : file_(file) {
 	modulename_ = file->name();
 	MessageSorter sorter(file_);

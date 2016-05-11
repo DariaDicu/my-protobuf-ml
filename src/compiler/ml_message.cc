@@ -139,7 +139,6 @@ namespace ml {
 			string type = GetFormattedTypeFromField(field);
 			if (type != "Word8Vector.vector") UncapitalizeString(type);
 
-			// TODO: decide if default should be required.
 			string label = LabelName(field->label());
 			printer->Print("$name$: $type$ $label$",
 				"name", name,
@@ -152,7 +151,6 @@ namespace ml {
 			}
 		}
 		printer->Outdent();
-		// TODO: Print alias for main type declaration.
 		printer->Print("}\n");
 
 		GenerateBuilderStructure(printer);
@@ -255,7 +253,6 @@ namespace ml {
 		printer->Indent();
 		printer->Print("if (remaining = 0) then\n");
 		printer->Indent();
-		//TODO: count total bytes read... 0 for now. 
 		printer->Print("(obj, buff)\n");
 		printer->Outdent();
 		printer->Print("else if (remaining < 0) then\n");
@@ -320,7 +317,6 @@ namespace ml {
 			bool is_optional = (field->label() == 
 				FieldDescriptor::LABEL_OPTIONAL);
 
-			// TODO: implement functionality for compact fields.
 			string setter_name;
 
 			if (is_repeated) {
@@ -349,7 +345,7 @@ namespace ml {
 					"setter_name", setter_name);
 			}
 		}
-		// Raise exception for unknown tag. TODO: skip based on wire type, length.
+		// Raise exception for unknown tag.
 		printer->Print("\n");
 		if (descriptor_->field_count() > 0) printer->Print("|");
 		printer->Print(" n => raise Exception(DECODE, \"Unknown field tag\")\n");
@@ -473,7 +469,6 @@ namespace ml {
 		printer->Print("}\n");
 
 		/*
-		TODO: delete.
 		// Print type declaration for parent type.
 		string parent = descriptor_->name();
 		CapitalizeString(parent);

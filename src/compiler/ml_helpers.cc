@@ -76,7 +76,6 @@ int GetWireCode(const FieldDescriptor::Type type) {
     case FieldDescriptor::TYPE_FLOAT:
       return 5;
 
-    // TODOL Be careful and check return value.
     case FieldDescriptor::TYPE_GROUP:
       return -1;
     // No default because we want the compiler to complain if any new
@@ -94,7 +93,6 @@ void SanitizeForMl(string& name) {
 string PrimitiveTypeName(const FieldDescriptor::Type type) {
   MlType ml_type = GetMlType(type);
   switch (ml_type) {
-    // TODO: replace this with implementation for big ints.
       case MLTYPE_BIGINT : return "int";
       case MLTYPE_BOOLEAN : return "bool";
       case MLTYPE_INT : return "int";
@@ -138,7 +136,6 @@ void UncapitalizeString(string& type) {
   if (type[0] >= 'A' && type[0] <= 'Z') type[0] += 'a' - 'A';
 }
 
-// TODO: const reference instead?
 string GetFormattedTypeFromField(const FieldDescriptor* field) {
   if (PrimitiveType(field->type())) {
     return PrimitiveTypeName(field->type());

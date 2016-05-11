@@ -58,7 +58,6 @@ struct
 	fun nextByte (buff, i) =
 		let
 			(*Subscript exception raise here if no next_byte*)
-			(*TODO - build your own error *)
 			val b = Word8Vector.sub (buff, i)
 		in
 			(b, (buff, i+1))
@@ -81,7 +80,6 @@ but not the key. The key parsing is delegated to parent message. *)
 fun decodeVarint_core buff i prev_val (ParsedByteCount(s)) = 
 let 
 	val (b, next_buff) = ByteInputStream.nextByte buff
-	(* TODO - Treat overflow? *)
 	(* little endian *)
 	val next_val = 
 		prev_val + IntInf.<<((MlGenByte.toInt (MlGenByte.getTail b)), 
@@ -204,13 +202,11 @@ end
 (* PolyML does not provide 32-bit int. If type is int32/sint32/uint32, leaving
 it on 64-bits is not a problem for the user (semantics preserved). *)
 (* However, for signed types, we must convert to a signed integer. *)
-(* TODO *)
 fun decodeInt32 buff = unsignedToSigned (decodeVarint buff)
 fun decodeInt64 buff = unsignedToSigned (decodeVarint buff)
 fun decodeUint32 buff = decodeVarint buff
 fun decodeUint64 buff = decodeVarint buff
 
-(* Is unsignedtosigned really necessary here? TODO - Remove it.*)
 fun decodeSint32 buff = unsignedToSigned (decodeZigZag buff)
 fun decodeSint64 buff = unsignedToSigned (decodeZigZag buff)
 

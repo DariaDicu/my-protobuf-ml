@@ -48,7 +48,7 @@ vector<vector<int> > buildBinaryTree(int n) {
 	return RG;
 }
 
-// Returns the *inverse* graph for a random tree. TODO: replace tree with DAG.
+// Returns the *inverse* graph for a random tree.
 // For type 4.
 vector<vector<int> > buildRandomTree(int n) {
 	// Build a random tree rooted at 0.

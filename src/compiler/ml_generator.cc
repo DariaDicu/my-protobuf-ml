@@ -51,23 +51,7 @@ bool MlGenerator::Generate(const FileDescriptor* file,
                            string* error) const {
   FileGenerator file_generator(file);
 
-  /*
-  // No need to parse options for now, as we do not support any.
-  vector<pair<string, string> > options;
-  ParseGeneratorParameter(parameter, &options);
-  string output_list_file;
-  for (int i = 0; i < options.size(); i++) {
-    if (options[i].first == "output_list_file") {
-      output_list_file = options[i].second;
-    } else {
-      *error = "Unknown generator option: " + options[i].first;
-      return false;
-    }
-  }
-  */
-
   // For now, the filename is simply the name of the .proto file. 
-  // TODO: Consider replacing this with an implementation for a name resolver. 
   string filename = StripSuffixString(file->name(), ".proto") + ".pb.ml";
   scoped_ptr<io::ZeroCopyOutputStream> output(context->Open(filename));
   io::Printer printer(output.get(), '$');
