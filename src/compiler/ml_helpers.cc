@@ -87,7 +87,19 @@ int GetWireCode(const FieldDescriptor::Type type) {
 }
 
 void SanitizeForMl(string& name) {
-  if (name == "type") name += "_";
+  if (name == "type" ||
+    name == "val" ||
+    name == "fun" || 
+    name == "in" ||
+    name == "end" ||
+    name == "while" ||
+    name == "ref" ||
+    name == "let" ||
+    name == "use" ||
+    name == "struct" ||
+    name == "structure" ||
+    name == "signature" ||
+    name == "sig") name += "_";
 }
 
 string PrimitiveTypeName(const FieldDescriptor::Type type) {
