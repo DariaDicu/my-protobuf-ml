@@ -1,5 +1,6 @@
 /* 
-	g++ -I /usr/local/include -L /usr/local/lib topological_sort_test.cpp -lprotobuf -pthread
+	make check
+	./topological_test	
 */
 
 #include <chrono>
@@ -201,53 +202,6 @@ const FileDescriptor* buildChainDescriptorGraph(int n) {
 	return fd;
 }
 
-// Runs the sorter and graph builder on the given FileDescriptor and prints to
-// standard output the times for each operation.
-void run_test(const FileDescriptor* file) {
-	std::chrono::high_resolution_clock::time_point start;
-	std::chrono::high_resolution_clock::time_point finish;
-	long long summed_duration = 0;
-	MessageSorter* sorter;
-	for (int r = 0; r < 3; r++) {
-		// Start timer.
-		start = std::chrono::high_resolution_clock::now();
-
-		sorter = new MessageSorter(file);
-		sorter->get_ordering();
-
-		// Stop timer and print time.
-	    finish = std::chrono::high_resolution_clock::now();
-	    long long duration = 
-	    	std::chrono::duration_cast<std::chrono::milliseconds>
-	    	(finish - start).count();
-	    delete sorter;
-	    summed_duration += duration;
-	}
-    cout << "------building the dependency graph and topological sort averaged "
-    	"over 3 runs: " << summed_duration/3 << " ms\n";
-
-    GraphBuilder* graph_builder;
-    summed_duration = 0;
-    for (int r = 0; r < 3; r++) {
-	    start = std::chrono::high_resolution_clock::now();
-		graph_builder = new GraphBuilder(file);
-		
-		// Run graph builder separately
-		graph_builder->rebuild_dependency_graph();
-
-		// Stop timer and print time.
-	    finish = std::chrono::high_resolution_clock::now();
-	    long long duration = std::chrono::duration_cast
-	    	<std::chrono::milliseconds>
-	    	(finish - start).count();
-
-	    delete graph_builder;
-	    summed_duration += duration;
-	}
-    cout << "------out of which building the dependency graph averaged over 3 "
-    	"runs: " << summed_duration/3 << " ms\n";
-}
-
 void run_test_for_plot(const FileDescriptor* file, int n, fstream* output) {
 	std::chrono::high_resolution_clock::time_point start;
 	std::chrono::high_resolution_clock::time_point finish;
@@ -272,7 +226,7 @@ void run_test_for_plot(const FileDescriptor* file, int n, fstream* output) {
 	}
 	*output << n << " " << (summed_duration/3) << "\n";
 	output->flush();
-	cout << n << " ok\n";
+	cout << n << " -- time " << ((double)summed_duration/3000000000) << " s \n";
 	/*
     summed_duration = 0;
     for (int r = 0; r < 3; r++) {

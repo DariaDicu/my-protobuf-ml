@@ -1,3 +1,5 @@
+(* Testing correctness of ML encoding against ML decoding on primitives.proto. *)
+
 use "tests/primitives.pb.ml";
 
 (* Test uses precompiled file called primitives.pb.ml*)
@@ -108,13 +110,15 @@ fun test 0 =
 
 val lastTest = 2;
 
-(* use "primitive_test.ml"; runTests(); *)
 fun runTests () = 
 let
 	fun run i = 
-	if i > lastTest then (true, "All tests pass!")
-	else if (test i) then (run (i+1))
-	else (false, "Test " ^ Int.toString(i) ^ " failed")
+		if i > lastTest then (true, "All tests pass!")
+		else if (test i) then (run (i+1))
+		else (false, "Test " ^ Int.toString(i) ^ " failed");
+	val (b, message) = run 0;
 in
-	run 0
-end
+	print(message^"\n")
+end;
+
+fun main () = runTests ();

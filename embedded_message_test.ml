@@ -1,3 +1,5 @@
+(* Testing correctness of ML encoding against ML decoding on embedded.proto. *)
+
 use "tests/embedded.pb.ml";
 use "tests/test_helpers.ml";
 
@@ -45,13 +47,15 @@ fun test 0 =
 
 val lastTest = 0;
 
-(* use "embedded.ml"; runTests(); *)
 fun runTests () = 
 let
 	fun run i = 
-	if i > lastTest then (true, "All tests pass!")
-	else if (test i) then (run (i+1))
-	else (false, "Test " ^ Int.toString(i) ^ " failed")
+		if i > lastTest then (true, "All tests pass!")
+		else if (test i) then (run (i+1))
+		else (false, "Test " ^ Int.toString(i) ^ " failed");
+	val (b, message) = run 0;
 in
-	run 0
-end
+	print(message^"\n")
+end;
+
+fun main () = runTests ();

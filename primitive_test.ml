@@ -157,9 +157,12 @@ val lastTest = 66;
 fun runTests () = 
 let
 	fun run i = 
-	if i > lastTest then (true, "All tests pass!")
-	else if (test i) then (run (i+1))
-	else (false, "Test " ^ Int.toString(i) ^ " failed")
+  	if i > lastTest then (true, "All tests pass!")
+  	else if (test i) then (run (i+1))
+  	else (false, "Test " ^ Int.toString(i) ^ " failed");
+  val (b, message) = run 0;
 in
-	run 0
+	print(message)
 end
+
+fun main () = runTests();

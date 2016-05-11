@@ -1,3 +1,6 @@
+(* Test for decoding (attempts to decode a data file encoded using the C++
+library. *)
+
 use "tests/primitives.pb.ml";
 use "tests/embedded.pb.ml";
 use "tests/test_helpers.ml";
@@ -178,9 +181,12 @@ end
 fun runDecoding () = 
 let
 	fun run i = 
-	if i > lastTest then (true, "All tests pass!")
-	else if (decode i) then (run (i+1))
-	else (false, "Test " ^ Int.toString(i) ^ " failed")
+		if i > lastTest then (true, "TESTS PASS! All messages were decoded correctly!")
+		else if (decode i) then (run (i+1))
+		else (false, "Test " ^ Int.toString(i) ^ " failed")
+	val (b, message) = run 0
 in
-	run 0
+	print(message^"\n")
 end
+
+fun main() = runDecoding ();

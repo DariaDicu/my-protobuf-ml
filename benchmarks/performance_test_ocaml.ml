@@ -43,10 +43,8 @@ let serialize_simple_message_test () =
 	for counter = 1 to 100000 do 
 		let s = Piqirun.to_string(SM.gen_simple_message simple_message) in ()
 	done;
-	print_string ("Simple message serialization ran in ");
 	let stop = Sys.time () in
-	print_float (stop -. start);
-	print_string ("\n");;
+	(stop -. start);;
 
 
 let serialize_primitives_message_test () = 
@@ -55,10 +53,8 @@ let serialize_primitives_message_test () =
 	for counter = 1 to 100000 do 
 		let s = Piqirun.to_string(PM.gen_full_primitive_collection primitives_message) in ()
 	done;
-	print_string ("Primitives message (no floats) serialization ran in ");
 	let stop = Sys.time () in
-	print_float (stop -. start);
-	print_string ("\n");;
+	(stop -. start);;
 
 
 let serialize_floating_point_message_test () = 
@@ -67,10 +63,8 @@ let serialize_floating_point_message_test () =
 	for counter = 1 to 100000 do 
 		let s = Piqirun.to_string(PM.gen_full_primitive_collection floating_point_message) in ()
 	done;
-	print_string ("Primitives message (WITH floats) serialization ran in ");
 	let stop = Sys.time () in
-	print_float (stop -. start);
-	print_string ("\n");;
+	(stop -. start);;
 
 let deserialize_simple_message_test () = 
 	let encoded_simple_message = Piqirun.to_string(SM.gen_simple_message get_simple_message) in
@@ -79,10 +73,8 @@ let deserialize_simple_message_test () =
 		let buff = Piqirun.init_from_string encoded_simple_message in
 		SM.parse_simple_message buff
 	done;
-	print_string ("Simple message deserialization ran in ");
 	let stop = Sys.time () in
-	print_float (stop -. start);
-	print_string ("\n");;
+	(stop -. start);;
 
 let deserialize_primitives_message_test () = 
 	let encoded_primitives_message = Piqirun.to_string(PM.gen_full_primitive_collection get_primitives_message) in
@@ -91,10 +83,8 @@ let deserialize_primitives_message_test () =
 		let buff = Piqirun.init_from_string encoded_primitives_message in
 		PM.parse_full_primitive_collection buff
 	done;
-	print_string ("Primitives message (no floats) deserialization ran in ");
 	let stop = Sys.time () in
-	print_float (stop -. start);
-	print_string ("\n");;
+	(stop -. start);;
 
 let deserialize_floating_point_message_test () = 
 	let encoded_floating_point_message = Piqirun.to_string(PM.gen_full_primitive_collection get_floating_point_message) in
@@ -103,17 +93,37 @@ let deserialize_floating_point_message_test () =
 		let buff = Piqirun.init_from_string encoded_floating_point_message in
 		PM.parse_full_primitive_collection buff
 	done;
-	print_string ("Primitives message (WITH floats) deserialization ran in ");
 	let stop = Sys.time () in
-	print_float (stop -. start);
-	print_string ("\n");;
+	(stop -. start);;
 
-serialize_simple_message_test();;
-serialize_primitives_message_test();;
-serialize_floating_point_message_test();;
-deserialize_simple_message_test();;
-deserialize_primitives_message_test();;
-deserialize_floating_point_message_test();;
+let average_test_runs test_function print_message = 
+let avg_time = ref 0.0 in
+for i = 1 to 5 do
+	let t = test_function() in
+	if (i > 1 && i < 5) then avg_time := !avg_time +. (t/.3.0)
+done;
+print_string (print_message);
+print_float (!avg_time);
+print_string ("\n");;
+
+average_test_runs serialize_simple_message_test
+"Simple message serialization ran in (averaged over mid 3 runs): ";;
+
+average_test_runs serialize_primitives_message_test
+"Primitives message (no floats) serialization ran in (averaged over mid 3 runs): ";;
+
+average_test_runs serialize_floating_point_message_test
+"Primitives message (WITH floats) serialization ran in (averaged over mid 3 runs): ";;
+
+average_test_runs deserialize_simple_message_test
+"Simple message deserialization ran in (averaged over 3 mid runs): ";;
+
+average_test_runs deserialize_primitives_message_test
+"Primitives message (no floats) deserialization ran in (averaged over mid 3 runs): ";;
+
+average_test_runs deserialize_floating_point_message_test 
+"Primitives message (WITH floats) deserialization ran in (averaged over mid 3 runs): ";;
+
 print_string "done\n";;
 
 

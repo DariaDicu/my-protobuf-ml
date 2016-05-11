@@ -24,26 +24,29 @@ end
 
 fun reset_timer () = (timer := Timer.startRealTimer ())
 
-fun print_time () = 
-let 
-	fun print_time' t = print("Test ran in " ^ (Time.toString t) ^ " s\n")
-in
-	print_time' (Timer.checkRealTimer (!timer))
-end
+fun print_time t = print("Test ran in " ^ (Real.toString t) ^ " s\n")
 
 (* Prints the CPU time taken to serialize a SimpleMessage 100.000 times *)
 fun testSerialization message_instance encoding_function = 
 let 
 	val counter = ref 100000
+	val run_cnt = ref 5;
+	val avg_time = ref 0.0;
 in
-	(
+	(* Take mid 3 runs and average *)
+	while !run_cnt > 0 do (
 		reset_timer();
+		counter := 100000;
 		while !counter > 0 do (
 			Byte.bytesToString (encoding_function message_instance);
 			counter := !counter - 1
 		);
-		print_time()
-	)
+		if ((!run_cnt) <> 5 andalso (!run_cnt) <> 1) then
+			avg_time := (!avg_time) + Time.toReal(Timer.checkRealTimer (!timer))
+		else ();
+		run_cnt := !run_cnt - 1
+	);
+	print_time ((!avg_time)/3.0)
 end
 
 (* Prints the CPU time taken to deserialize a SimpleMessage 100.000 times *)
@@ -52,15 +55,22 @@ let
 	val counter = ref 100000
 	val raw_bytes = encode_function message_instance
 	val input_stream = ByteInputStream.fromVector raw_bytes
+	val run_cnt = ref 5
+	val avg_time = ref 0.0
 in
-	(
+	while !run_cnt > 0 do (
 		reset_timer();
+		counter := 100000;
 		while !counter > 0 do (
 			decode_function input_stream;
 			counter := !counter - 1
 		);
-		print_time()
-	)
+		if ((!run_cnt) <> 5 andalso (!run_cnt) <> 1) then
+			avg_time := (!avg_time) + Time.toReal(Timer.checkRealTimer (!timer))
+		else ();
+		run_cnt := !run_cnt - 1
+	);
+	print_time ((!avg_time)/3.0)
 end
 
 (* Returns some instance of SimpleMessage with fields filled in *)
