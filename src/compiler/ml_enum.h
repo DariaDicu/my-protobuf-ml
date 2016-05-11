@@ -43,4 +43,4 @@ class EnumGenerator {
 }  // namespace protobuf
 
 }  // namespace google
-#endif  // GOOGLE_PROTOBUF_COMPILER_JAVA_ENUM_H__
+#endif  // GOOGLE_PROTOBUF_COMPILER_ML_ENUM_H__

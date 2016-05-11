@@ -1,120 +1,5 @@
 use "MlGenLib.ml";
 
-signature SMALLPRIMITIVECOLLECTION =
-sig
-  type t
-  structure Builder : sig
-    type t
-    type parentType
-
-    val clear_my_int32: t -> t
-    val set_my_int32: t * int -> t
-
-    val clear_my_int64: t -> t
-    val set_my_int64: t * int -> t
-
-    val clear_my_string: t -> t
-    val set_my_string: t * string -> t
-
-    val init : unit -> t
-
-    val build : t -> parentType
-  end where type parentType = t
-  val encode : t -> Word8Vector.vector
-  val encodeToplevel : t -> Word8Vector.vector
-  val decode : ByteInputStream.stream -> t * parseResult
-  val decodeToplevel : ByteInputStream.stream -> t * parseResult
-end
-
-structure SmallPrimitiveCollection : SMALLPRIMITIVECOLLECTION = 
-struct
-  type t = {
-    my_int32: int option,
-    my_int64: int option,
-    my_string: string option
-  }
-  structure Builder = 
-  struct
-    type parentType = t
-    type t = {
-      my_int32: int option ref,
-      my_int64: int option ref,
-      my_string: string option ref
-    }
-
-    fun clear_my_int32 msg = 
-    ((#my_int32 msg) := NONE; msg)
-    fun set_my_int32 (msg, l) = 
-    ((#my_int32 msg) := SOME(l); msg)
-
-    fun clear_my_int64 msg = 
-    ((#my_int64 msg) := NONE; msg)
-    fun set_my_int64 (msg, l) = 
-    ((#my_int64 msg) := SOME(l); msg)
-
-    fun clear_my_string msg = 
-    ((#my_string msg) := NONE; msg)
-    fun set_my_string (msg, l) = 
-    ((#my_string msg) := SOME(l); msg)
-
-    fun init () = { my_int32 = ref NONE,
-      my_int64 = ref NONE,
-      my_string = ref NONE
-    }
-
-    fun build msg = 
-    let
-      val my_int32Val = (!(#my_int32 msg))
-      val my_int64Val = (!(#my_int64 msg))
-      val my_stringVal = (!(#my_string msg))
-    in { 
-      my_int32 = my_int32Val,
-      my_int64 = my_int64Val,
-      my_string = my_stringVal
-    }
-    end
-  end
-  fun encodeToplevel m = 
-    let
-      val my_int32 = (encodeOptional encodeInt32) (encodeKey(Tag(1), Code(0))) (#my_int32 m)
-      val my_int64 = (encodeOptional encodeInt64) (encodeKey(Tag(2), Code(0))) (#my_int64 m)
-      val my_string = (encodeOptional encodeString) (encodeKey(Tag(3), Code(2))) (#my_string m)
-    in
-      Word8Vector.concat [
-        my_int32,
-        my_int64,
-        my_string
-      ]
-    end
-
-  fun encode m = encodeMessage (encodeToplevel m)
-
-  fun decodeNextField buff obj remaining = 
-    if (remaining = 0) then
-      (obj, buff)
-    else if (remaining < 0) then
-      raise Exception(DECODE, "Field encoding does not match length in message header.")
-    else
-      let
-        val ((Tag(t), Code(c)), parse_result) = decodeKey buff
-        val ParseResult(buff, ParsedByteCount(keyByteCount)) = parse_result
-        val remaining = remaining - keyByteCount
-      in
-        if (remaining <= 0) then
-          raise Exception(DECODE, "Not enough bytes left after parsing message field key.")
-        else case (t) of 1 => decodeNextUnpacked (decodeInt32) (Builder.set_my_int32) (decodeNextField) obj buff remaining
-        | 2 => decodeNextUnpacked (decodeInt64) (Builder.set_my_int64) (decodeNextField) obj buff remaining
-        | 3 => decodeNextUnpacked (decodeString) (Builder.set_my_string) (decodeNextField) obj buff remaining
-        | n => raise Exception(DECODE, "Unknown field tag")
-      end
-
-  fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
-
-  fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
-
-end
-type smallPrimitiveCollection = SmallPrimitiveCollection.t
-
 signature FULLPRIMITIVECOLLECTION =
 sig
   type t
@@ -421,4 +306,119 @@ struct
 
 end
 type fullPrimitiveCollection = FullPrimitiveCollection.t
+
+signature SMALLPRIMITIVECOLLECTION =
+sig
+  type t
+  structure Builder : sig
+    type t
+    type parentType
+
+    val clear_my_int32: t -> t
+    val set_my_int32: t * int -> t
+
+    val clear_my_int64: t -> t
+    val set_my_int64: t * int -> t
+
+    val clear_my_string: t -> t
+    val set_my_string: t * string -> t
+
+    val init : unit -> t
+
+    val build : t -> parentType
+  end where type parentType = t
+  val encode : t -> Word8Vector.vector
+  val encodeToplevel : t -> Word8Vector.vector
+  val decode : ByteInputStream.stream -> t * parseResult
+  val decodeToplevel : ByteInputStream.stream -> t * parseResult
+end
+
+structure SmallPrimitiveCollection : SMALLPRIMITIVECOLLECTION = 
+struct
+  type t = {
+    my_int32: int option,
+    my_int64: int option,
+    my_string: string option
+  }
+  structure Builder = 
+  struct
+    type parentType = t
+    type t = {
+      my_int32: int option ref,
+      my_int64: int option ref,
+      my_string: string option ref
+    }
+
+    fun clear_my_int32 msg = 
+    ((#my_int32 msg) := NONE; msg)
+    fun set_my_int32 (msg, l) = 
+    ((#my_int32 msg) := SOME(l); msg)
+
+    fun clear_my_int64 msg = 
+    ((#my_int64 msg) := NONE; msg)
+    fun set_my_int64 (msg, l) = 
+    ((#my_int64 msg) := SOME(l); msg)
+
+    fun clear_my_string msg = 
+    ((#my_string msg) := NONE; msg)
+    fun set_my_string (msg, l) = 
+    ((#my_string msg) := SOME(l); msg)
+
+    fun init () = { my_int32 = ref NONE,
+      my_int64 = ref NONE,
+      my_string = ref NONE
+    }
+
+    fun build msg = 
+    let
+      val my_int32Val = (!(#my_int32 msg))
+      val my_int64Val = (!(#my_int64 msg))
+      val my_stringVal = (!(#my_string msg))
+    in { 
+      my_int32 = my_int32Val,
+      my_int64 = my_int64Val,
+      my_string = my_stringVal
+    }
+    end
+  end
+  fun encodeToplevel m = 
+    let
+      val my_int32 = (encodeOptional encodeInt32) (encodeKey(Tag(1), Code(0))) (#my_int32 m)
+      val my_int64 = (encodeOptional encodeInt64) (encodeKey(Tag(2), Code(0))) (#my_int64 m)
+      val my_string = (encodeOptional encodeString) (encodeKey(Tag(3), Code(2))) (#my_string m)
+    in
+      Word8Vector.concat [
+        my_int32,
+        my_int64,
+        my_string
+      ]
+    end
+
+  fun encode m = encodeMessage (encodeToplevel m)
+
+  fun decodeNextField buff obj remaining = 
+    if (remaining = 0) then
+      (obj, buff)
+    else if (remaining < 0) then
+      raise Exception(DECODE, "Field encoding does not match length in message header.")
+    else
+      let
+        val ((Tag(t), Code(c)), parse_result) = decodeKey buff
+        val ParseResult(buff, ParsedByteCount(keyByteCount)) = parse_result
+        val remaining = remaining - keyByteCount
+      in
+        if (remaining <= 0) then
+          raise Exception(DECODE, "Not enough bytes left after parsing message field key.")
+        else case (t) of 1 => decodeNextUnpacked (decodeInt32) (Builder.set_my_int32) (decodeNextField) obj buff remaining
+        | 2 => decodeNextUnpacked (decodeInt64) (Builder.set_my_int64) (decodeNextField) obj buff remaining
+        | 3 => decodeNextUnpacked (decodeString) (Builder.set_my_string) (decodeNextField) obj buff remaining
+        | n => raise Exception(DECODE, "Unknown field tag")
+      end
+
+  fun decode buff = decodeFullHelper false decodeNextField (Builder.build) (Builder.init ()) buff
+
+  fun decodeToplevel buff = decodeFullHelper true decodeNextField (Builder.build) (Builder.init ()) buff
+
+end
+type smallPrimitiveCollection = SmallPrimitiveCollection.t
 

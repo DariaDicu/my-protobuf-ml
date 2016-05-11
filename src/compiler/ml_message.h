@@ -27,9 +27,6 @@ class MessageGenerator {
   void GenerateSignature(io::Printer* printer, bool toplevel);
   void GenerateStructure(io::Printer* printer, bool toplevel);
 
-  void GenerateBuilderSignature(io::Printer* printer);
-  void GenerateBuilderStructure(io::Printer* printer);
-
  private:
   const Descriptor* descriptor_;
   const unordered_map<const Descriptor*, int>* message_order_;
@@ -42,4 +39,4 @@ class MessageGenerator {
 }  // namespace protobuf
 
 }  // namespace google
-#endif  // GOOGLE_PROTOBUF_COMPILER_JAVA_MESSAGE_H__
+#endif  // GOOGLE_PROTOBUF_COMPILER_ML_MESSAGE_H__
